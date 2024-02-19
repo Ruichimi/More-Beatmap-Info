@@ -1,7 +1,10 @@
 {
   "dependencies": {
     "axios": "^1.6.7",
-    "jquery": "^3.7.1"
+    "css-loader": "^6.10.0",
+    "glob": "^10.3.10",
+    "jquery": "^3.7.1",
+    "style-loader": "^3.3.4"
   },
   "devDependencies": {
     "webpack": "^5.90.2",
@@ -11,9 +14,9 @@
     "dev": "webpack --watch --mode development",
     "build": "webpack --mode production"
   },
-  "name": "last_mapdiff_info",
+  "name": "last-mapdiff-info",
   "version": "1.0.0",
-  "description": "Add`s an information about last difficulty from mapset to maps list",
+  "description": "Adds information about the last difficulty from the mapset to the maps list page",
   "main": "content.js",
   "repository": {
     "type": "git",

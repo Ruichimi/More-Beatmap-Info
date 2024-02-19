@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Last diff info",
+  "name": "last-mapdiff-info",
   "version": "0.1",
-  "description": "Add`s an information about last difficulty from mapset to maps list",
+  "description": "Adds information about the last difficulty from the mapset to the maps list page",
   "permissions": ["activeTab"],
   "action": {
     "default_icon": "icon.png",
@@ -11,7 +11,7 @@
   "content_scripts": [
     {
       "matches": ["https://osu.ppy.sh/beatmapsets"],
-      "js": ["dist/bundle.js"]
+      "js": ["build/content.bundle.js"]
     }
   ]
 }
