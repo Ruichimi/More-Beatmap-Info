@@ -1,5 +1,33 @@
 {
   "dependencies": {
+    "axios": "^1.6.7",
     "jquery": "^3.7.1"
-  }
+  },
+  "devDependencies": {
+    "webpack": "^5.90.2",
+    "webpack-cli": "^5.1.4"
+  },
+  "scripts": {
+    "dev": "webpack --watch --mode development",
+    "build": "webpack --mode production"
+  },
+  "name": "last_mapdiff_info",
+  "version": "1.0.0",
+  "description": "Add`s an information about last difficulty from mapset to maps list",
+  "main": "content.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cadregich/Last_Mapdiff_Info_osu.git"
+  },
+  "keywords": [
+    "osu",
+    "mapset",
+    "lastdiff"
+  ],
+  "author": "Cadregich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Cadregich/Last_Mapdiff_Info_osu/issues"
+  },
+  "homepage": "https://github.com/Cadregich/Last_Mapdiff_Info_osu#readme"
 }
