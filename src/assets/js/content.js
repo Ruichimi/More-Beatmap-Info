@@ -2,7 +2,7 @@ import axios from 'axios';
 import $ from 'jquery';
 
 $(document).ready(function () {
-    console.log(123);
+    console.log(124);
 
     axios.get('https://example.com/api/data')
         .then(response => {
