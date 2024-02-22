@@ -1,18 +1,13 @@
 {
     "dependencies": {
         "axios": "^1.6.7",
-        "css-loader": "^6.10.0",
-        "glob": "^10.3.10",
-        "jquery": "^3.7.1",
-        "style-loader": "^3.3.4"
+        "jquery": "^3.7.1"
     },
     "devDependencies": {
-        "vite": "^5.1.4",
-        "webpack": "^5.90.2",
-        "webpack-cli": "^5.1.4"
+        "vite": "^5.1.4"
     },
     "scripts": {
-        "dev": "vite",
+        "dev": "vite build --watch",
         "build": "vite build"
     },
     "name": "last-mapdiff-info",

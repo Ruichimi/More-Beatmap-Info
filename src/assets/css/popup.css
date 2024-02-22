@@ -1,10 +1,13 @@
 @font-face {
     font-family: 'Fredoka';
-    src: url('/src/assets/fonts/Fredoka-VariableFont_wdth,wght.ttf') format('truetype');
+    src: url('../fonts/Fredoka-VariableFont_wdth,wght.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
 }
 
-body, * {
+body {
     font-family: 'Fredoka', sans-serif;
+    background-size: cover;
+    background-image: url("../images/bg/popup-bg.png");
+    color: white;
 }
