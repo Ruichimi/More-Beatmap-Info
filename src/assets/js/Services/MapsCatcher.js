@@ -21,12 +21,11 @@ class MapsCatcher {
         const targetNode = document.querySelector('.beatmapsets__items');
 
         if (targetNode) {
-            observer.observe(targetNode, { childList: true });
+            observer.observe(targetNode, {childList: true});
         }
     }
 
     updateData() {
-        console.log('Вызван updateData');
         console.log(this.data);
     }
 
@@ -41,11 +40,15 @@ class MapsCatcher {
             let match = href.match(/\/(\d+)$/);
             id = match ? match[1] : null;
 
+
             if (!this.isMutation) {
                 this.isMutation = true;
-                element.innerText = id;
+                if (!element.innerText.includes('Id: ')) {
+                    element.innerText = element.innerText + ' Id: ' + id;
+                }
                 this.isMutation = false;
             }
+
 
             return id;
         });

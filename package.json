@@ -1,6 +1,8 @@
 {
     "dependencies": {
-        "axios": "^1.6.7"
+        "axios": "^1.6.7",
+        "curl": "^0.1.4",
+        "osu-web.js": "^2.2.0"
     },
     "devDependencies": {
         "vite": "^5.1.4"
