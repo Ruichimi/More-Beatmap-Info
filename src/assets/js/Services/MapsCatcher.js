@@ -29,13 +29,17 @@ class MapsCatcher {
             id = match ? match[1] : null;
 
             let mapsetData = await OsuApi.getMapsetData(id);
-            let lastDiffStarRating = this.getLastMapsetDiffInfo(mapsetData).difficulty_rating;
+            let lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+            console.log(lastDiffData);
 
-            // let mapParams = `${}`;
+            let mapParamsString = `<div class="last-diff-info">${lastDiffData.difficulty_rating}★
+  bpm ${lastDiffData.bpm} combo ${lastDiffData.max_combo} od ${lastDiffData.accuracy} <br>
+  ar ${lastDiffData.ar} cs ${lastDiffData.cs} hp ${lastDiffData.drain}</div>`;
+
 
 
             if (!element.innerHTML.includes('Id: ')) {
-                element.innerHTML = element.innerHTML + ' Id: ' + id + '<br>' + lastDiffStarRating;
+                element.innerHTML = element.innerHTML + ' Id: ' + id + '<br>' + mapParamsString;
             }
 
             return id;

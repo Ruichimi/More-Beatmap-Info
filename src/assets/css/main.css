@@ -1,3 +1,7 @@
-* {
-    color: white;
+.last-diff-info {
+    font-size: 14px;
+}
+
+.beatmapset-panel {
+    height: 120px !important;
 }

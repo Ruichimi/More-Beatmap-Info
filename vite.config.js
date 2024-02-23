@@ -8,7 +8,8 @@ export default {
         rollupOptions: {
             input: {
                 content: path.resolve(__dirname, 'src/assets/js/content.js'),
-                main: path.resolve(__dirname, 'popup.html'),
+                mainCss: path.resolve(__dirname, 'src/assets/css/main.css'),
+                popup: path.resolve(__dirname, 'popup.html'),
             },
 
             output: {
