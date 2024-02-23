@@ -1,12 +1,6 @@
-import axios from 'axios';
+import MapsCatcher from "./Services/MapsCatcher";
 
-console.log(124);
-
-axios.get('https://example.com/api/data')
-    .then(response => {
-        console.log(response.data);
-    })
-    .catch(error => {
-        console.error('Ошибка при выполнении запроса:', error);
-    });
+window.onload = function() {
+    MapsCatcher.initializeObserver();
+};
 
