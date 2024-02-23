@@ -8,9 +8,8 @@ class OsuApi {
         this.clientSecret = env.osuApi.clientSecret;
         this.accessToken = null;
 
-        if (!this.accessToken) {
-            this.getToken();
-        }
+
+        this.getToken();
     }
 
     async getToken() {
@@ -33,7 +32,7 @@ class OsuApi {
         }
     }
 
-    async getMapInfo(beatmapId) {
+    async getMapsetData(beatmapId) {
         try {
             const response = await axios.get(this.baseUrl + `beatmapsets/${beatmapId}`, {
                 headers: {
@@ -42,7 +41,7 @@ class OsuApi {
                 },
             });
 
-            console.log(response.data);
+            // console.log(response.data);
             return response.data;
 
         } catch (error) {

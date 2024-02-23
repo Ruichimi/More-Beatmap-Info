@@ -1,21 +1,13 @@
+import OsuApi from './OsuApiHelper'
+
 class MapsCatcher {
     constructor() {
         this.data = [];
-        this.isMutation = false;
     }
 
     initializeObserver() {
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (!this.isMutation && mutation.target.classList.contains('beatmapsets__items')) {
-                    const newIds = this.getMapsIds();
-
-                    if (!this.arraysAreEqual(this.data, newIds)) {
-                        this.data = newIds;
-                        this.updateData();
-                    }
-                }
-            });
+        const observer = new MutationObserver(() => {
+            this.getMapsIds();
         });
 
         const targetNode = document.querySelector('.beatmapsets__items');
@@ -25,37 +17,39 @@ class MapsCatcher {
         }
     }
 
-    updateData() {
-        console.log(this.data);
-    }
-
     getMapsIds() {
+        console.log('Вызванна функция getMapsIds');
         let elements = document.querySelectorAll('.beatmapset-panel__main-link.u-ellipsis-overflow');
         let elementsArray = Array.from(elements);
         let filteredElementsArray = elementsArray.filter((element, index) => index % 2 === 0);
-
-        return filteredElementsArray.map(element => {
+        return filteredElementsArray.map(async element => {
             let id;
             let href = element.getAttribute('href');
             let match = href.match(/\/(\d+)$/);
             id = match ? match[1] : null;
 
+            let mapsetData = await OsuApi.getMapsetData(id);
+            let lastDiffStarRating = this.getLastMapsetDiffInfo(mapsetData).difficulty_rating;
 
-            if (!this.isMutation) {
-                this.isMutation = true;
-                if (!element.innerText.includes('Id: ')) {
-                    element.innerText = element.innerText + ' Id: ' + id;
-                }
-                this.isMutation = false;
+            // let mapParams = `${}`;
+
+
+            if (!element.innerHTML.includes('Id: ')) {
+                element.innerHTML = element.innerHTML + ' Id: ' + id + '<br>' + lastDiffStarRating;
             }
-
 
             return id;
         });
     }
 
-    arraysAreEqual(arr1, arr2) {
-        return JSON.stringify(arr1) === JSON.stringify(arr2);
+    getLastMapsetDiffInfo(mapsetData) {
+        if (!mapsetData || !mapsetData.beatmaps || mapsetData.beatmaps.length === 0) {
+            return null;
+        }
+
+        return mapsetData.beatmaps.reduce((maxDiff, currentMap) => {
+            return currentMap.difficulty_rating > maxDiff.difficulty_rating ? currentMap : maxDiff;
+        }, mapsetData.beatmaps[0]);
     }
 }
 
