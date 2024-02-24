@@ -1,4 +1,4 @@
 .idea
 node_modules
 public/build/*
-env.example.json
+env.json
