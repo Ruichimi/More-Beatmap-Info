@@ -3,5 +3,10 @@
 }
 
 .beatmapset-panel {
-    height: 120px !important;
+    height: 115px !important;
+}
+
+.last-diff-info {
+    height: 15px;
+    margin-bottom: 6px;
 }

@@ -1,6 +1,6 @@
-import MapsCatcher from "./Services/MapsCatcher";
+import LastDiffInfo from "./Services/LastDiffInfo";
 
 window.onload = function() {
 
-    MapsCatcher.initializeObserver();
+    LastDiffInfo.initialize();
 };
