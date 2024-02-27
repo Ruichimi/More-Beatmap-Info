@@ -1,9 +1,14 @@
 .last-diff-info {
     font-size: 14px;
+    white-space: nowrap;
 }
 
 .beatmapset-panel {
     height: 115px !important;
+}
+
+.beatmaps-popup::before {
+    --panel-height: 115px;
 }
 
 .last-diff-info {
