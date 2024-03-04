@@ -2,7 +2,7 @@ import OsuApi from './OsuApiHelper'
 
 class LastDiffInfo {
     initialize() {
-        this.setLastDiffInfoToMapsRows(document.querySelectorAll('.beatmapsets__items-row'));
+        this.setLastDiffInfoToMapsRows(document.getElementsByClassName('beatmapsets__items-row'));
 
         const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {
