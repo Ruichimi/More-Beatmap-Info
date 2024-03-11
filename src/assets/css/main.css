@@ -15,3 +15,21 @@
     height: 15px;
     margin-bottom: 6px;
 }
+
+.more-diff-info-btn {
+    background: gray;
+    border-radius: 100%;
+    border: none;
+    height: 20px;
+}
+
+.deep-map-params-tooltip {
+    position: absolute;
+    padding: 5px;
+    white-space: nowrap;
+    z-index: 5000;
+    background: gray;
+    border-radius: 10px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
