@@ -84,10 +84,38 @@ class LastDiffInfo {
             return;
         }
 
-        const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
-        const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
+        const cachedData = this.getCachedMapData(mapId);
 
-        this.displayTooltip(mapDiffDeepParams, mapId, element);
+        if (cachedData) {
+            console.log('Data retrieved from cache:', cachedData);
+            this.displayTooltip(cachedData.mapDiffDeepParams, mapId, element);
+        } else {
+            const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
+            const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
+            console.log('Data retrieved from API:', mapDiffDeepParams);
+            this.cacheMapData(mapId, { mapDiffDeepParams });
+
+            this.displayTooltip(mapDiffDeepParams, mapId, element);
+        }
+    }
+    cacheMapData(mapId, data) {
+        const cacheKey = `mapCache_${mapId}`;
+
+        const deepParams = JSON.parse(localStorage.getItem('deepParams')) || {};
+        deepParams[cacheKey] = data;
+
+        localStorage.setItem('deepParams', JSON.stringify(deepParams));
+    }
+
+    getCachedMapData(mapId) {
+        const cacheKey = `mapCache_${mapId}`;
+        const deepParams = JSON.parse(localStorage.getItem('deepParams'));
+
+        if (deepParams && deepParams[cacheKey]) {
+            return deepParams[cacheKey];
+        }
+
+        return null;
     }
 
     displayTooltip(mapDiffDeepParams, mapId, element) {
@@ -106,10 +134,14 @@ class LastDiffInfo {
         const hideTooltip = () => {
             tooltip.remove();
             document.removeEventListener('click', hideTooltip);
+            console.log('Подсказка убрана');
         };
 
         element.before(tooltip);
-        document.addEventListener('click', hideTooltip);
+
+        setTimeout(() => {
+            document.addEventListener('click', hideTooltip);
+        }, 0);
     }
 
     flattenBeatmapRows(beatmapsBlocksRows) {
