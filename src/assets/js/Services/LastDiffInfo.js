@@ -11,38 +11,49 @@ class LastDiffInfo {
         const targetNode = document.querySelector('.beatmapsets__items');
 
         if (targetNode) {
-            observer.observe(targetNode, {childList: true});
+            observer.observe(targetNode, { childList: true });
         }
 
-        const catchMapsAttempts = 5;
-        const beatmapsRows = this.catchMapsFromDom(catchMapsAttempts);
-
-        if (beatmapsRows) {
-            this.setLastDiffInfoToMapsRows(beatmapsRows);
-        }
+        this.catchMapsFromDom(5)
+            .then(beatmapsRows => {
+                console.log('Пытаемся вызвать setLastDiffInfoToMapsRows');
+                if (beatmapsRows) {
+                    this.setLastDiffInfoToMapsRows(beatmapsRows);
+                }
+            })
+            .catch(error => {
+                console.error('Произошла ошибка:', error);
+            });
     }
 
     catchMapsFromDom(attempts) {
-        const beatmapsRows = document.getElementsByClassName('beatmapsets__items-row');
+        console.log('Вызвана функция catchMapsFromDom');
+        return new Promise((resolve, reject) => {
+            const attemptToCatchMaps = () => {
+                const beatmapsRows = document.getElementsByClassName('beatmapsets__items-row');
 
-        if (beatmapsRows.length > 0) {
-            console.log('Получили карты с первой попытки');
-            return beatmapsRows;
-        } else if (attempts > 1) {
-            console.log('Не удалось получить карты с DOM, повторяем попытку');
-            setTimeout(() => {
-                this.catchMapsFromDom(attempts - 1);
-            }, 200)
-        } else {
-            return null;
-        }
+                if (beatmapsRows.length > 0) {
+                    console.log('Получили карты');
+                    resolve(beatmapsRows);
+                } else if (attempts > 1) {
+                    console.log('Не удалось получить карты с DOM, повторяем попытку');
+                    setTimeout(() => {
+                        attemptToCatchMaps();
+                    }, 200);
+                } else {
+                    reject('Не удалось получить карты после нескольких попыток');
+                }
+            };
+
+            attemptToCatchMaps();
+        });
     }
 
     setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
         console.log(beatmapsBlocksRows);
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
 
-        beatmapsBlocks.map(async element => {
+        beatmapsBlocks.map(async (element) => {
             const mapsetId = this.getMapsetId(element);
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
@@ -75,6 +86,17 @@ class LastDiffInfo {
 
         const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
         const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
+
+        this.displayTooltip(mapDiffDeepParams, mapId, element);
+    }
+
+    displayTooltip(mapDiffDeepParams, mapId, element) {
+        const existingTooltip = document.querySelector('.deep-map-params-tooltip');
+
+        if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
+            existingTooltip.remove();
+            return;
+        }
 
         const tooltip = document.createElement('div');
         tooltip.classList.add('deep-map-params-tooltip');
