@@ -13,7 +13,7 @@ class LastDiffInfo {
         const targetNode = document.querySelector('.beatmapsets__items');
 
         if (targetNode) {
-            observer.observe(targetNode, { childList: true });
+            observer.observe(targetNode, {childList: true});
         }
         this.catchMapsFromDom(5)
             .then(beatmapsRows => {
@@ -58,7 +58,7 @@ class LastDiffInfo {
             const mapsetId = this.getMapsetId(element);
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-            console.log(lastDiffData);
+            console.log('Информация о последней сложности: ' + lastDiffData);
             let mapParamsString;
             if (lastDiffData.mode === 'osu') {
                 const mapBlockLeftMenu = element.querySelector('.beatmapset-panel__menu');
@@ -78,26 +78,15 @@ class LastDiffInfo {
     async showDeepMapData(mapId, element) {
         console.log(mapId);
         const existingTooltip = document.querySelector('.deep-map-params-tooltip');
-
         if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
             existingTooltip.remove();
             return;
         }
-
-        const cachedData = this.getCachedMapData(mapId);
-
-        if (cachedData) {
-            console.log('Data retrieved from cache:', cachedData);
-            this.displayTooltip(cachedData.mapDiffDeepParams, mapId, element);
-        } else {
-            const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
-            const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
-            console.log('Data retrieved from API:', mapDiffDeepParams);
-            this.cacheMapData(mapId, { mapDiffDeepParams });
-
-            this.displayTooltip(mapDiffDeepParams, mapId, element);
-        }
+        const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
+        const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
+        this.displayTooltip(mapDiffDeepParams, mapId, element);
     }
+
     cacheMapData(mapId, data) {
         const cacheKey = `mapCache_${mapId}`;
         const deepParams = JSON.parse(localStorage.getItem('deepParams')) || {};

@@ -1,31 +1,18 @@
-import axios from "../axios";
-import env from "/env.json";
+import axios from "axios";
 
 class OsuApi {
-    constructor() {
-        this.baseUrl = 'https://osu.ppy.sh/api/v2/';
-        this.clientId = env.osuApi.clientId;
-        this.clientSecret = env.osuApi.clientSecret;
-        this.accessToken = null;
-
-        this.initPromise = this.init();
-    }
-
-    async init() {
-        const response = await axios.post('https://osu.ppy.sh/oauth/token', `client_id=${this.clientId}&client_secret=${this.clientSecret}&grant_type=client_credentials&scope=public`, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json',
-            },
-        });
-
-        this.accessToken = response.data.access_token;
-    }
-
     async getMapsetData(mapsetId) {
         console.log('Вызванна функция getMapsetData');
+        const cachedData = this.getCachedBeatmapsetData(mapsetId, 'beatmapsetCache', 'beatmapData');
+        if (cachedData) {
+            console.log('Данные получены из кеша:', cachedData);
+            return cachedData;
+        }
+
         try {
             const response = await axios.get(`http://localhost:3000/api/MapsetData/${mapsetId}`);
             console.log('Данные мапсета:', response.data);
+            this.cacheBeatmapsetData(mapsetId, response.data, 'beatmapsetCache', 'beatmapData');
             return response.data;
         } catch (error) {
             console.error('Ошибка:', error);
@@ -33,13 +20,41 @@ class OsuApi {
     }
 
     async getBeatmapData(beatmapId) {
+        console.log('Вызвана функция getBeatmapData');
+        const cachedData = this.getCachedBeatmapsetData(beatmapId, 'deepParams', 'mapCache');
+        if (cachedData) {
+            console.log('Полные данные получены из кеша:', cachedData);
+            return cachedData;
+        }
+
         try {
             const response = await axios.get(`http://localhost:3000/api/BeatmapData/${beatmapId}`);
-            console.log('Данные мапсета:', response.data);
+            console.log('Полные данные карты:', response.data);
+
+            this.cacheBeatmapsetData(beatmapId, response.data, 'deepParams', 'mapCache');
+
             return response.data;
         } catch (error) {
             console.error('Ошибка:', error);
         }
+    }
+
+    cacheBeatmapsetData (beatmapId, data, cacheName, cacheItemName) {
+        const deepParams = JSON.parse(localStorage.getItem(cacheName)) || {};
+        const cacheKey = `${cacheItemName}_${beatmapId}`;
+        deepParams[cacheKey] = data;
+        localStorage.setItem(cacheName, JSON.stringify(deepParams));
+    }
+
+    getCachedBeatmapsetData(beatmapId, cacheName, cacheItemName) {
+        const cacheKey = `${cacheItemName}_${beatmapId}`;
+        const deepParams = JSON.parse(localStorage.getItem(cacheName));
+
+        if (deepParams && deepParams[cacheKey]) {
+            return deepParams[cacheKey];
+        }
+
+        return null;
     }
 
 }
