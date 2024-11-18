@@ -22,29 +22,24 @@ class OsuApi {
     }
 
     async getMapsetData(mapsetId) {
-        await this.initPromise;
-        const response = await axios.get(this.baseUrl + `beatmapsets/${mapsetId}`, {
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`, 'Content-Type': 'application/json',
-            },
-        });
-
-        return response.data;
+        console.log('Вызванна функция getMapsetData');
+        try {
+            const response = await axios.get(`http://localhost:3000/api/MapsetData/${mapsetId}`);
+            console.log('Данные мапсета:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
     }
 
     async getBeatmapData(beatmapId) {
-        await this.initPromise;
-
-        const url = `${this.baseUrl}beatmaps/${beatmapId}/attributes`;
-
-        const response = await axios.post(url, {}, {
-            headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        return response.data;
+        try {
+            const response = await axios.get(`http://localhost:3000/api/BeatmapData/${beatmapId}`);
+            console.log('Данные мапсета:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
     }
 
 }

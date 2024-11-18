@@ -1,4 +1,6 @@
 import OsuApi from './OsuApiHelper'
+import axios from "axios";
+
 class LastDiffInfo {
     initialize() {
         const observer = new MutationObserver(mutations => {
@@ -13,7 +15,6 @@ class LastDiffInfo {
         if (targetNode) {
             observer.observe(targetNode, { childList: true });
         }
-
         this.catchMapsFromDom(5)
             .then(beatmapsRows => {
                 console.log('Пытаемся вызвать setLastDiffInfoToMapsRows');
@@ -76,7 +77,6 @@ class LastDiffInfo {
 
     async showDeepMapData(mapId, element) {
         console.log(mapId);
-
         const existingTooltip = document.querySelector('.deep-map-params-tooltip');
 
         if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
@@ -100,7 +100,6 @@ class LastDiffInfo {
     }
     cacheMapData(mapId, data) {
         const cacheKey = `mapCache_${mapId}`;
-
         const deepParams = JSON.parse(localStorage.getItem('deepParams')) || {};
         deepParams[cacheKey] = data;
 
