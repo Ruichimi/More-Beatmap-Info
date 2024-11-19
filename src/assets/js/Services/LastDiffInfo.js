@@ -1,5 +1,4 @@
-import OsuApi from './OsuApiHelper'
-import axios from "axios";
+import OsuApi from './IntermediateOsuApiService'
 
 class LastDiffInfo {
     initialize() {
@@ -51,14 +50,15 @@ class LastDiffInfo {
     }
 
     setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
-        console.log(beatmapsBlocksRows);
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
 
         beatmapsBlocks.map(async (element) => {
             const mapsetId = this.getMapsetId(element);
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-            console.log('Информация о последней сложности: ' + lastDiffData);
+            console.log('Информация о последней сложности');
+            console.log(lastDiffData);
+            console.log('_______________');
             let mapParamsString;
             if (lastDiffData.mode === 'osu') {
                 const mapBlockLeftMenu = element.querySelector('.beatmapset-panel__menu');
@@ -174,9 +174,15 @@ class LastDiffInfo {
     createBeatmapDifficultyParamsString(beatmapData) {
         const {
             aim_difficulty, speed_difficulty, speed_note_count, slider_factor, overall_difficulty
-        } = beatmapData.attributes;
+        } = beatmapData;
 
-        return [`Aim diff: ${aim_difficulty.toFixed(1)}`, `Speed diff: ${speed_difficulty.toFixed(1)}`, `Speed note count: ${speed_note_count.toFixed(1)}`, `Slider factor: ${slider_factor.toFixed(1)}`, `Overall diff: ${overall_difficulty.toFixed(1)}`,].join(', ');
+        return [
+            `Aim diff: ${aim_difficulty.toFixed(1)}`,
+            `Speed diff: ${speed_difficulty.toFixed(1)}`,
+            `Speed note count: ${speed_note_count.toFixed(1)}`,
+            `Slider factor: ${slider_factor.toFixed(1)}`,
+            `Overall diff: ${overall_difficulty.toFixed(1)}`
+        ].join(', ');
     }
 }
 
