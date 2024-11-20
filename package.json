@@ -4,17 +4,17 @@
         "cors": "^2.8.5",
         "curl": "^0.1.4",
         "express": "^4.19.2",
-        "nodemon": "^3.1.4",
         "osu-web.js": "^2.2.0",
         "tippy.js": "^6.3.7"
     },
     "devDependencies": {
-        "vite": "^5.1.4"
+        "vite": "^5.1.4",
+        "nodemon": "3.1.7"
     },
     "scripts": {
         "dev": "vite build --watch",
         "build": "vite build",
-        "start": "nodemon server/server.js"
+        "nodemon": "nodemon server/server.js"
     },
     "name": "last-mapdiff-info",
     "version": "1.0.0",
