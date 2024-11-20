@@ -9,13 +9,6 @@ app.use(cors());
 
 app.get('/', async (req, res) => {
     res.send('Hello World!');
-
-    async function init() {
-        await osuApiHelper.init();
-        console.log(osuApiHelper.accessToken);
-    }
-
-    await init();
 });
 
 app.get('/api/MapsetData/:id', async (req, res) => {
@@ -40,6 +33,12 @@ app.get('/api/BeatmapData/:id', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`Сервер запущен на http://localhost:${port}`);
+    try {
+        await osuApiHelper.init();  // Вызываем init после запуска сервера
+        console.log("OsuApiHelper инициализирован.");
+    } catch (error) {
+        console.error("Ошибка при инициализации OsuApiHelper:", error);
+    }
 });
