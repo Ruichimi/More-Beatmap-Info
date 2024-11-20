@@ -21,19 +21,25 @@ class IntermediateOsuApiService {
     async getMapsetData(mapsetId) {
         const beatmapsetDataFromCache = this.getDataFromCacheById(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey);
         if (beatmapsetDataFromCache) {
-            console.log('Данные мапсета получены из кеша:');
+            console.log('Данные мапсета получены из кеша');
             return beatmapsetDataFromCache;
         }
         try {
             const response = await axios.get(`${this.serverUrl}/api/MapsetData/${mapsetId}`);
             const beatmapsetBeatmapRequiredFields = ["difficulty_rating", "bpm", "max_combo", "accuracy", "ar", "cs", "drain", "mode", "id"];
-            console.log(response.data);
+            const dateForCache = this.getDateForCache(response.data);
             const beatmaps = response.data.beatmaps.map((beatmap) =>
                 this.filterObject(beatmap, beatmapsetBeatmapRequiredFields)
             );
             const beatmapsetDataFiltered = {...this.filterObject(response.data, ['bpm']), beatmaps};
-            this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetDataFiltered);
-            console.log(beatmapsetDataFiltered);
+            const beatmapsetFilteredWithDate = this.addDateToObject(beatmapsetDataFiltered, dateForCache);
+            this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetFilteredWithDate);
+            //console.log(beatmapsetDataFiltered);
+            console.log(this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey ));
+            if (this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey ) >= 600) {
+                this.removeOldestItemsFromCache(this.localStorageMapsetsKey , 300);
+                console.log('Очистили часть кеша');
+            }
             return beatmapsetDataFiltered;
         } catch (error) {
             console.error('Ошибка:', error);
@@ -59,7 +65,8 @@ class IntermediateOsuApiService {
         }
         try {
             const response = await axios.get(`${this.serverUrl}/api/BeatmapData/${beatmapId}`);
-            const requiredBeatmapFields = ["aim_difficulty", "speed_difficulty", "speed_note_count", "slider_factor", "overall_difficulty"];
+            console.log(response.data);
+            const requiredBeatmapFields = ["aim_difficulty", "speed_difficulty", "speed_note_count", "slider_factor", "overall_difficulty", "ranked_date", "last_updated"];
             const beatmapDataFiltered = this.filterObject(response.data.attributes, requiredBeatmapFields);
             this.cacheDataToObjectWithId(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey, beatmapDataFiltered);
             return beatmapDataFiltered;
@@ -118,6 +125,54 @@ class IntermediateOsuApiService {
                 filteredObject[key] = beatmapData[key];
                 return filteredObject;
             }, {});
+    }
+
+    getDateForCache(beatmapsetData) {
+        return beatmapsetData.ranked_date || beatmapsetData.last_updated;
+    }
+
+    addDateToObject(object, date) {
+        object.date = date;
+        return object;
+    }
+
+    getOldestItemsFromCache(key, count) {
+        const storageData = JSON.parse(localStorage.getItem(key)) || {};
+        const storageArrayWithNames = Object.keys(storageData).map(itemKey => {
+            const item = storageData[itemKey];
+            return {
+                ...item,
+                key: itemKey
+            };
+        });
+
+        // Сортируем по дате
+        storageArrayWithNames.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // Возвращаем первые 'count' элементов
+        return storageArrayWithNames.slice(0, count);
+    }
+
+
+
+    removeOldestItemsFromCache(key, count) {
+        const oldestItems = this.getOldestItemsFromCache(key, count);
+        console.log(oldestItems);
+        const storageData = JSON.parse(localStorage.getItem(key)) || {};
+
+        oldestItems.forEach(item => {
+            console.log(item.key);
+            delete storageData[item.key];
+        });
+
+
+        localStorage.setItem(key, JSON.stringify(storageData));
+    }
+
+    getItemsCountFromLocalStorage(key) {
+        const storageData = JSON.parse(localStorage.getItem(key)) || {};
+        console.log(storageData);
+        return Object.keys(storageData).length;
     }
 }
 
