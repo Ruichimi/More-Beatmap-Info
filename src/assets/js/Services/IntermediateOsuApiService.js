@@ -127,14 +127,13 @@ class IntermediateOsuApiService {
             }, {});
     }
 
-    getDateForCache(beatmapsetData) {
-        return beatmapsetData.ranked_date || beatmapsetData.last_updated;
-    }
-
-    addDateToObject(object, date) {
-        object.date = date;
-        return object;
-    }
+    /**
+     * Retrieves the oldest items from a cached object stored in localStorage.
+     *
+     * @param {string} key - The localStorage key where the cached object is stored.
+     * @param {number} count - The number of oldest items to retrieve.
+     * @returns {Array} An array of the oldest items, each including its original key and data.
+     */
 
     getOldestItemsFromCache(key, count) {
         const storageData = JSON.parse(localStorage.getItem(key)) || {};
@@ -145,15 +144,17 @@ class IntermediateOsuApiService {
                 key: itemKey
             };
         });
-
-        // Сортируем по дате
         storageArrayWithNames.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Возвращаем первые 'count' элементов
         return storageArrayWithNames.slice(0, count);
     }
 
-
+    /**
+     * Removes the oldest items from a cached object stored in localStorage.
+     *
+     * @param {string} key - The localStorage key where the cached object is stored.
+     * @param {number} count - The number of oldest items to remove.
+     */
 
     removeOldestItemsFromCache(key, count) {
         const oldestItems = this.getOldestItemsFromCache(key, count);
@@ -165,9 +166,39 @@ class IntermediateOsuApiService {
             delete storageData[item.key];
         });
 
-
         localStorage.setItem(key, JSON.stringify(storageData));
     }
+
+    /**
+     * Retrieves the relevant date for caching from the provided beatmapset data.
+     *
+     * @param {Object} beatmapsetData - The data object containing date fields.
+     * @returns {string|null} The ranked date if available; otherwise, the last updated date.
+     */
+
+    getDateForCache(beatmapsetData) {
+        return beatmapsetData.ranked_date || beatmapsetData.last_updated;
+    }
+
+    /**
+     * Adds a date property to the provided object.
+     *
+     * @param {Object} object - The object to which the date will be added.
+     * @param {string} date - The date to add to the object.
+     * @returns {Object} The same object with the added date property.
+     */
+
+    addDateToObject(object, date) {
+        object.date = date;
+        return object;
+    }
+
+    /**
+     * Counts the number of items stored in a localStorage object.
+     *
+     * @param {string} key - The localStorage key where the object is stored.
+     * @returns {number} The number of items in the stored object.
+     */
 
     getItemsCountFromLocalStorage(key) {
         const storageData = JSON.parse(localStorage.getItem(key)) || {};
