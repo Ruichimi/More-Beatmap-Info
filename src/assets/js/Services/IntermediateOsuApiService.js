@@ -6,6 +6,7 @@ class IntermediateOsuApiService {
         this.localStorageMapsetsItemKey = "beatmapset";
         this.localStorageBeatmapDeepInfoKey = "beatmapsDeepInfoCache";
         this.localStorageBeatmapDeepInfoItemKey = "beatmap";
+        this.localStorageBeatmapsAmountKey = "beatmapsCount";
         this.serverUrl = "http://localhost:3000";
     }
 
@@ -35,11 +36,8 @@ class IntermediateOsuApiService {
             const beatmapsetFilteredWithDate = this.addDateToObject(beatmapsetDataFiltered, dateForCache);
             this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetFilteredWithDate);
             //console.log(beatmapsetDataFiltered);
-            console.log(this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey ));
-            if (this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey ) >= 600) {
-                this.removeOldestItemsFromCache(this.localStorageMapsetsKey , 300);
-                console.log('Очистили часть кеша');
-            }
+            this.incrementBeatmapsAmountsCache();
+            this.clearCacheIfNeeded(600, 300);
             return beatmapsetDataFiltered;
         } catch (error) {
             console.error('Ошибка:', error);
@@ -77,12 +75,39 @@ class IntermediateOsuApiService {
     }
 
     /**
+     * Clears the cache if the number of beatmaps exceeds the cache limit.
+     * Removes the oldest items from the cache and updates the count in localStorage.
+     *
+     * @param {number} cacheLimit - The cache limit for beatmaps.
+     * @param {number} removedItemsFromCacheAmount - The number of items to remove from the cache.
+     * @returns {void}
+     */
+
+    clearCacheIfNeeded(cacheLimit, removedItemsFromCacheAmount) {
+        const beatmapsInCacheAmount = parseInt(localStorage.getItem(
+            this.localStorageBeatmapsAmountKey), 10) || 0;
+        if (beatmapsInCacheAmount >= cacheLimit) {
+            const beatmapsInCacheAmountInCache = this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey);
+            //Проверяем сам объект на случай неправильного сохранённого значения
+            if (beatmapsInCacheAmountInCache >= cacheLimit) {
+                this.removeOldestItemsFromCache(this.localStorageMapsetsKey, removedItemsFromCacheAmount);
+                localStorage.setItem(this.localStorageBeatmapsAmountKey, (beatmapsInCacheAmountInCache
+                    - removedItemsFromCacheAmount).toString());
+                console.log('Очистили часть кеша');
+            } else {
+                localStorage.setItem(this.localStorageBeatmapsAmountKey, beatmapsInCacheAmountInCache.toString());
+            }
+        }
+    }
+
+    /**
      * Stores data in localStorage under a specified cache name and associates it with a unique ID and name.
      *
      * @param {string} cacheItemId - The unique identifier for the cache item.
      * @param {string} cacheItemName - The name or type of the cache item (e.g., 'user', 'beatmap').
      * @param {string} cacheName - The name of the cache in localStorage where the data will be stored.
      * @param {any} data - The data to be stored, which will be serialized into JSON format.
+     * @returns {void}
      */
 
     cacheDataToObjectWithId(cacheItemId, cacheItemName, cacheName, data) {
@@ -154,6 +179,7 @@ class IntermediateOsuApiService {
      *
      * @param {string} key - The localStorage key where the cached object is stored.
      * @param {number} count - The number of oldest items to remove.
+     * @returns {void}
      */
 
     removeOldestItemsFromCache(key, count) {
@@ -205,6 +231,23 @@ class IntermediateOsuApiService {
         console.log(storageData);
         return Object.keys(storageData).length;
     }
+
+    /**
+     * Increments the cached amount of beatmaps stored in localStorage.
+     *
+     * This method retrieves the current beatmap count from localStorage, increments it by 1,
+     * and then stores the updated value back in localStorage.
+     *
+     * @returns {void}
+     */
+
+    incrementBeatmapsAmountsCache() {
+        const currentAmount = parseInt(localStorage.getItem(this.localStorageBeatmapsAmountKey)
+            || '0', 10);
+        localStorage.setItem(this.localStorageBeatmapsAmountKey, (currentAmount + 1).toString());
+    }
 }
 
-export default new IntermediateOsuApiService();
+export default new
+
+IntermediateOsuApiService();
