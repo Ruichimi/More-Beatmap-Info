@@ -1,5 +1,5 @@
-import OsuApi from './IntermediateOsuApiService'
-
+import OsuApi from './IntermediateOsuApiService';
+import log from "/logger";
 class LastDiffInfo {
     initialize() {
         const observer = new MutationObserver(mutations => {
@@ -16,27 +16,26 @@ class LastDiffInfo {
         }
         this.catchMapsFromDom(5)
             .then(beatmapsRows => {
-                console.log('Пытаемся вызвать setLastDiffInfoToMapsRows');
+                log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {
                     this.setLastDiffInfoToMapsRows(beatmapsRows);
                 }
             })
             .catch(error => {
-                console.error('Произошла ошибка:', error);
+                log(`Произошла ошибка, не удалось загрузить карты со страницы: ${error}`, 'prod', 'error');
             });
     }
 
     catchMapsFromDom(attempts) {
-        console.log('Вызвана функция catchMapsFromDom');
+        log('Вызвана функция catchMapsFromDom', 'debug');
         return new Promise((resolve, reject) => {
             const attemptToCatchMaps = () => {
                 const beatmapsRows = document.getElementsByClassName('beatmapsets__items-row');
-
                 if (beatmapsRows.length > 0) {
-                    console.log('Получили карты');
+                    log('Получили карты', 'dev');
                     resolve(beatmapsRows);
                 } else if (attempts > 1) {
-                    console.log('Не удалось получить карты с DOM, повторяем попытку');
+                    log('Не удалось получить карты с DOM, повторяем попытку', 'dev', 'warn');
                     setTimeout(() => {
                         attemptToCatchMaps();
                     }, 200);
@@ -56,9 +55,8 @@ class LastDiffInfo {
             const mapsetId = this.getMapsetId(element);
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-            console.log('Информация о последней сложности');
-            console.log(lastDiffData);
-            console.log('_______________');
+            log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
+
             let mapParamsString;
             if (lastDiffData.mode === 'osu') {
                 const mapBlockLeftMenu = element.querySelector('.beatmapset-panel__menu');
@@ -76,7 +74,7 @@ class LastDiffInfo {
     }
 
     async showDeepMapData(mapId, element) {
-        console.log(mapId);
+        log(mapId, 'dev');
         const existingTooltip = document.querySelector('.deep-map-params-tooltip');
         if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
             existingTooltip.remove();
@@ -85,25 +83,6 @@ class LastDiffInfo {
         const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
         const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
         this.displayTooltip(mapDiffDeepParams, mapId, element);
-    }
-
-    cacheMapData(mapId, data) {
-        const cacheKey = `mapCache_${mapId}`;
-        const deepParams = JSON.parse(localStorage.getItem('deepParams')) || {};
-        deepParams[cacheKey] = data;
-
-        localStorage.setItem('deepParams', JSON.stringify(deepParams));
-    }
-
-    getCachedMapData(mapId) {
-        const cacheKey = `mapCache_${mapId}`;
-        const deepParams = JSON.parse(localStorage.getItem('deepParams'));
-
-        if (deepParams && deepParams[cacheKey]) {
-            return deepParams[cacheKey];
-        }
-
-        return null;
     }
 
     displayTooltip(mapDiffDeepParams, mapId, element) {
@@ -122,7 +101,7 @@ class LastDiffInfo {
         const hideTooltip = () => {
             tooltip.remove();
             document.removeEventListener('click', hideTooltip);
-            console.log('Подсказка убрана');
+            log('Подсказка убрана', 'dev');
         };
 
         element.before(tooltip);
