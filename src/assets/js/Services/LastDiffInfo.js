@@ -1,6 +1,12 @@
 import OsuApi from './IntermediateOsuApiService';
 import log from "/logger";
+
 class LastDiffInfo {
+
+    constructor() {
+        this.mountedItemsAmount = 0;
+    }
+
     initialize() {
         const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {
@@ -14,6 +20,9 @@ class LastDiffInfo {
         if (targetNode) {
             observer.observe(targetNode, {childList: true});
         }
+
+        this.addElementToDOM('last-diff-info');
+
         this.catchMapsFromDom(5)
             .then(beatmapsRows => {
                 log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
@@ -48,6 +57,17 @@ class LastDiffInfo {
         });
     }
 
+    addElementToDOM(id) {
+        if (!document.getElementById(id)) {
+            const element = document.createElement('div');
+            element.id = id;
+            document.body.appendChild(element);
+            console.log(`Элемент с ID "${id}" добавлен.`);
+        } else {
+            console.log(`Элемент с ID "${id}" уже существует.`);
+        }
+    }
+
     setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
 
@@ -70,6 +90,7 @@ class LastDiffInfo {
             }
             mapParamsString = this.createMapParamsString(lastDiffData);
             this.createInfoBlock(element, mapParamsString, mapsetId);
+            this.mountedItemsAmount+= 1;
         });
     }
 
@@ -125,9 +146,13 @@ class LastDiffInfo {
 
     createMapParamsString(lastDiffData) {
         return `<div class="last-diff-info">
-    ${lastDiffData.difficulty_rating}★ bpm ${lastDiffData.bpm}
-    combo ${lastDiffData.max_combo} od ${lastDiffData.accuracy}
-    ar ${lastDiffData.ar} cs ${lastDiffData.cs} hp ${lastDiffData.drain}`;
+        ${lastDiffData.difficulty_rating}★
+        bpm ${lastDiffData.bpm}
+        combo ${lastDiffData.max_combo}
+        od ${lastDiffData.accuracy}
+        ar ${lastDiffData.ar}
+        cs ${lastDiffData.cs}
+        hp ${lastDiffData.drain}`;
     }
 
 
