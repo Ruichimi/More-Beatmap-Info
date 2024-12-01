@@ -31,7 +31,7 @@ class IntermediateOsuApiService {
     async getMapsetData(mapsetId) {
         const beatmapsetDataFromCache = this.getDataFromCacheById(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey);
         if (beatmapsetDataFromCache) {
-            log('Данные мапсета получены из кеша', 'dev');
+            log('Данные мапсета получены из кеша', 'debug');
             return beatmapsetDataFromCache;
         }
         try {

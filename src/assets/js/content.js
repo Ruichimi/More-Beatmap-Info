@@ -4,6 +4,7 @@ import log from "/logger";
 function initLastDiffInfo() {
     try {
         if (!document.getElementById('last-diff-info')) {
+            log('Инициализируем Last Diff Info', 'dev');
             LastDiffInfo.initialize();
         } else {
             log('Last diff info уже инициализирован', 'dev', 'warning');
@@ -18,6 +19,5 @@ window.onload = function() {
 };
 
 window.addEventListener('popstate', () => {
-    LastDiffInfo.initialize();
     initLastDiffInfo();
 });

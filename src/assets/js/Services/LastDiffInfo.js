@@ -1,27 +1,26 @@
 import OsuApi from './IntermediateOsuApiService';
+import DOMObserver from "./DOMObserver";
 import log from "/logger";
 
 class LastDiffInfo {
-
     constructor() {
         this.mountedItemsAmount = 0;
+        this.domObserver = new DOMObserver();
     }
 
     initialize() {
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-                if (mutation.addedNodes.length > 0) {
-                    this.setLastDiffInfoToMapsRows(mutation.addedNodes);
-                }
-            });
-        });
-        const targetNode = document.querySelector('.beatmapsets__items');
+        this.domObserver.startObserving(
+            '.beatmapsets__items',
+            (addedNodes, targetSelector) => this.handleMutations(addedNodes, targetSelector),
+            { childList: true, subtree: true }
+        );
 
-        if (targetNode) {
-            observer.observe(targetNode, {childList: true});
-        }
+        this.domObserver.observeDynamicElement(
+            '.beatmaps-popup__group', // Класс для поиска
+            (dynamicElement) => this.processPopupGroupChanges(dynamicElement) // Обработчик найденного элемента
+        );
 
-        this.addElementToDOM('last-diff-info');
+        this.addUniqueElementToDOM('last-diff-info');
 
         this.catchMapsFromDom(5)
             .then(beatmapsRows => {
@@ -33,6 +32,26 @@ class LastDiffInfo {
             .catch(error => {
                 log(`Произошла ошибка, не удалось загрузить карты со страницы: ${error}`, 'prod', 'error');
             });
+    }
+
+    processPopupGroupChanges(beatmapDiffsGroup) {
+        log(beatmapDiffsGroup, 'dev');
+
+        const links = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
+        links.forEach(link => {
+            const beatmapId = link.href.split('/').pop(); // Берём последний элемент URL
+            link.innerHTML += ` (ID: ${beatmapId})`;
+        });
+    }
+
+    handleMutations(addedNodes, targetSelector) {
+        if (targetSelector === '.beatmapsets__items') {
+            this.setLastDiffInfoToMapsRows(addedNodes);
+        }
+
+        if (targetSelector === '.beatmaps-popup__group') {
+            this.processPopupGroupChanges(addedNodes);
+        }
     }
 
     catchMapsFromDom(attempts) {
@@ -57,14 +76,14 @@ class LastDiffInfo {
         });
     }
 
-    addElementToDOM(id) {
+    addUniqueElementToDOM(id) {
         if (!document.getElementById(id)) {
             const element = document.createElement('div');
             element.id = id;
             document.body.appendChild(element);
-            console.log(`Элемент с ID "${id}" добавлен.`);
+            log(`Элемент с ID "${id}" добавлен.`, 'debug');
         } else {
-            console.log(`Элемент с ID "${id}" уже существует.`);
+            log(`Элемент с ID "${id}" уже существует.`, 'dev', 'warn');
         }
     }
 
