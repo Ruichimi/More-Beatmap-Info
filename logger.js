@@ -17,24 +17,48 @@ const logPriority = {
  * @param {string} logLevel - The log level (e.g., 'info', 'warn', 'error').
  * @param {string} [logType='log'] - The type of log ('log', 'warn', or 'error').
  */
-
 const log = (data, logLevel, logType = 'log') => {
-    if (logPriority[logLevel] === undefined) {
+    // Validate log level
+    if (!(logLevel in logPriority)) {
         console.warn(`Invalid log level: ${logLevel}`);
         return;
     }
-    if (logPriority[logLevel] <= logPriority[currentLogLevel]) {
-        switch (logType) {
-            case 'error':
-                console.error(data);
-                break;
-            case 'warn':
-                console.warn(data);
-                break;
-            default:
-                console.log(data);
-                break;
+
+    // Ensure log level priority meets the current log level
+    if (logPriority[logLevel] > logPriority[currentLogLevel]) {
+        return;
+    }
+
+    // Prepare common log properties
+    const currentTime = new Date().toLocaleTimeString();
+    const stack = new Error().stack.split('\n')[2]; // Get the stack trace, second line is the caller
+    const callerInfo = stack ? stack.trim() : 'Unknown source';
+
+    // Determine the style based on log type
+    const styles = {
+        'error': 'background: rgba(240, 93, 107, 0.2); color: white;',
+        'warn': 'background: rgba(255, 255, 50, 0.2); color: white;',
+        'log': 'color: white;'
+    };
+
+    const groupStyle = styles[logType] || styles['log'];
+
+    // Log output
+    try {
+        console.groupCollapsed(`%c[${logLevel.toUpperCase()}] ${data}`, groupStyle);
+        if (logType === 'error') {
+            console.error(data);
+        } else if (logType === 'warn') {
+            console.warn(data);
+        } else {
+            console.log(data);
         }
+
+        console.log(`Time: ${currentTime}`);
+        console.log(`Caller info: ${callerInfo}`);
+        console.groupEnd();
+    } catch (error) {
+        console.error('Error during logging:', error);
     }
 };
 
