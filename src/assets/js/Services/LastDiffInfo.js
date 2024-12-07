@@ -1,17 +1,17 @@
 import OsuApi from './IntermediateOsuApiService';
 import DOMObserver from "./DOMObserver";
+import DomHelper from "./DomHelper";
 import log from "/logger";
 
 class LastDiffInfo {
     constructor() {
-        this.mountedItemsAmount = 0;
         this.domObserver = new DOMObserver();
     }
 
     initialize() {
         this.domObserver.startObserving(
             '.beatmapsets__items',
-            (addedNodes, targetSelector) => this.handleMutations(addedNodes, targetSelector),
+            (addedNodes) => this.setLastDiffInfoToMapsRows(addedNodes),
             { childList: true, subtree: true }
         );
 
@@ -20,9 +20,9 @@ class LastDiffInfo {
             (dynamicElement) => this.processPopupGroupChanges(dynamicElement) // Обработчик найденного элемента
         );
 
-        this.addUniqueElementToDOM('last-diff-info');
+        DomHelper.addUniqueElementToDOM('last-diff-info');
 
-        this.catchMapsFromDom(5)
+        DomHelper.catchMapsFromDom(5)
             .then(beatmapsRows => {
                 log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {
@@ -36,55 +36,7 @@ class LastDiffInfo {
 
     processPopupGroupChanges(beatmapDiffsGroup) {
         log(beatmapDiffsGroup, 'dev');
-
-        const links = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
-        links.forEach(link => {
-            const beatmapId = link.href.split('/').pop(); // Берём последний элемент URL
-            link.innerHTML += ` (ID: ${beatmapId})`;
-        });
-    }
-
-    handleMutations(addedNodes, targetSelector) {
-        if (targetSelector === '.beatmapsets__items') {
-            this.setLastDiffInfoToMapsRows(addedNodes);
-        }
-
-        if (targetSelector === '.beatmaps-popup__group') {
-            this.processPopupGroupChanges(addedNodes);
-        }
-    }
-
-    catchMapsFromDom(attempts) {
-        log('Вызвана функция catchMapsFromDom', 'debug');
-        return new Promise((resolve, reject) => {
-            const attemptToCatchMaps = () => {
-                const beatmapsRows = document.getElementsByClassName('beatmapsets__items-row');
-                if (beatmapsRows.length > 0) {
-                    log('Получили карты', 'dev');
-                    resolve(beatmapsRows);
-                } else if (attempts > 1) {
-                    log('Не удалось получить карты с DOM, повторяем попытку', 'dev', 'warn');
-                    setTimeout(() => {
-                        attemptToCatchMaps();
-                    }, 200);
-                } else {
-                    reject('Не удалось получить карты после нескольких попыток');
-                }
-            };
-
-            attemptToCatchMaps();
-        });
-    }
-
-    addUniqueElementToDOM(id) {
-        if (!document.getElementById(id)) {
-            const element = document.createElement('div');
-            element.id = id;
-            document.body.appendChild(element);
-            log(`Элемент с ID "${id}" добавлен.`, 'debug');
-        } else {
-            log(`Элемент с ID "${id}" уже существует.`, 'dev', 'warn');
-        }
+        DomHelper.addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup);
     }
 
     setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
@@ -95,60 +47,26 @@ class LastDiffInfo {
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
             log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
-
-            let mapParamsString;
-            if (lastDiffData.mode === 'osu') {
-                const mapBlockLeftMenu = element.querySelector('.beatmapset-panel__menu');
-                const moreDiffInfoBtn = document.createElement('button');
-                moreDiffInfoBtn.classList.add('more-diff-info-btn');
-                moreDiffInfoBtn.innerText = '...';
-                moreDiffInfoBtn.addEventListener('click', () => {
-                    this.showDeepMapData(lastDiffData.id, element);
-                });
-                mapBlockLeftMenu.insertAdjacentElement('afterbegin', moreDiffInfoBtn);
-            }
-            mapParamsString = this.createMapParamsString(lastDiffData);
-            this.createInfoBlock(element, mapParamsString, mapsetId);
-            this.mountedItemsAmount+= 1;
+            DomHelper.addDeepInfoButtonToMap(element, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
+                return this.createBeatmapDifficultyParamsString(deepLastDiffData);
+            });
+            const mapDiffInfoString = this.createMapParamsString(lastDiffData);
+            this.insertInfoToBeatmapBlock(element, mapDiffInfoString);
         });
     }
 
-    async showDeepMapData(mapId, element) {
-        log(mapId, 'dev');
-        const existingTooltip = document.querySelector('.deep-map-params-tooltip');
-        if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
-            existingTooltip.remove();
-            return;
-        }
-        const deepLastDiffData = await OsuApi.getBeatmapData(mapId);
-        const mapDiffDeepParams = this.createBeatmapDifficultyParamsString(deepLastDiffData);
-        this.displayTooltip(mapDiffDeepParams, mapId, element);
-    }
+    createBeatmapDifficultyParamsString(beatmapData) {
+        const {
+            aim_difficulty, speed_difficulty, speed_note_count, slider_factor, overall_difficulty
+        } = beatmapData;
 
-    displayTooltip(mapDiffDeepParams, mapId, element) {
-        const existingTooltip = document.querySelector('.deep-map-params-tooltip');
-
-        if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
-            existingTooltip.remove();
-            return;
-        }
-
-        const tooltip = document.createElement('div');
-        tooltip.classList.add('deep-map-params-tooltip');
-        tooltip.innerText = mapDiffDeepParams;
-        tooltip.mapId = mapId;
-
-        const hideTooltip = () => {
-            tooltip.remove();
-            document.removeEventListener('click', hideTooltip);
-            log('Подсказка убрана', 'dev');
-        };
-
-        element.before(tooltip);
-
-        setTimeout(() => {
-            document.addEventListener('click', hideTooltip);
-        }, 0);
+        return [
+            `Aim diff: ${aim_difficulty.toFixed(1)}`,
+            `Speed diff: ${speed_difficulty.toFixed(1)}`,
+            `Speed note count: ${speed_note_count.toFixed(1)}`,
+            `Slider factor: ${slider_factor.toFixed(1)}`,
+            `Overall diff: ${overall_difficulty.toFixed(1)}`
+        ].join(', ');
     }
 
     flattenBeatmapRows(beatmapsBlocksRows) {
@@ -174,13 +92,12 @@ class LastDiffInfo {
         hp ${lastDiffData.drain}`;
     }
 
-
-    createInfoBlock(element, mapParamsString) {
+    insertInfoToBeatmapBlock(element, mapDiffInfoString) {
         const infoBlock = document.createElement('div');
         infoBlock.classList.add('last-diff-info');
         const statsRow = element.querySelector('.beatmapset-panel__info-row--stats');
         statsRow.parentNode.insertBefore(infoBlock, statsRow.nextSibling);
-        infoBlock.innerHTML = mapParamsString;
+        infoBlock.innerHTML = mapDiffInfoString;
         return infoBlock;
     }
 
@@ -192,20 +109,6 @@ class LastDiffInfo {
         return mapsetData.beatmaps.reduce((maxDiff, currentMap) => {
             return currentMap.difficulty_rating > maxDiff.difficulty_rating ? currentMap : maxDiff;
         }, mapsetData.beatmaps[0]);
-    }
-
-    createBeatmapDifficultyParamsString(beatmapData) {
-        const {
-            aim_difficulty, speed_difficulty, speed_note_count, slider_factor, overall_difficulty
-        } = beatmapData;
-
-        return [
-            `Aim diff: ${aim_difficulty.toFixed(1)}`,
-            `Speed diff: ${speed_difficulty.toFixed(1)}`,
-            `Speed note count: ${speed_note_count.toFixed(1)}`,
-            `Slider factor: ${slider_factor.toFixed(1)}`,
-            `Overall diff: ${overall_difficulty.toFixed(1)}`
-        ].join(', ');
     }
 }
 

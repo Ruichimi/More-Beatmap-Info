@@ -214,7 +214,7 @@ class IntermediateOsuApiService {
 
     removeOldestItemsFromCache(key, count) {
         const oldestItems = this.getOldestItemsFromCache(key, count);
-        console.log(oldestItems, 'debug');
+        log(oldestItems, 'debug');
         const storageData = JSON.parse(localStorage.getItem(key)) || {};
 
         oldestItems.forEach(item => {
