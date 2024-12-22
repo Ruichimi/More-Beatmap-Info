@@ -29,7 +29,7 @@ class DOMObserver {
         observer.observe(targetNode, options);
         this.observers.set(targetSelector, observer);
 
-        console.log(`DOMObserver: Started observing "${targetSelector}".`);
+        log(`DOMObserver: Started observing "${targetSelector}".`, 'dev');
     }
 
     observeDynamicElement(classToCheck, callback, options = { childList: true, subtree: true }) {
@@ -51,16 +51,18 @@ class DOMObserver {
         if (observer) {
             observer.disconnect();
             this.observers.delete(targetSelector);
-            console.log(`DOMObserver: Stopped observing "${targetSelector}".`);
+            log(`DOMObserver: Stopped observing "${targetSelector}".`, 'dev');
         } else {
-            console.warn(`DOMObserver: No observer found for "${targetSelector}".`);
+            log(`DOMObserver: No observer found for "${targetSelector}".`, 'dev', 'warn');
         }
     }
 
     stopAllObserving() {
+        log('meow', 'debug');
+        log(this.observers, 'debug');
         this.observers.forEach((observer, targetSelector) => {
             observer.disconnect();
-            console.log(`DOMObserver: Stopped observing "${targetSelector}".`);
+            log(`DOMObserver: Stopped observing "${targetSelector}".`, 'dev');
         });
         this.observers.clear();
     }

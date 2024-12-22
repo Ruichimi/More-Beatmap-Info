@@ -1,11 +1,15 @@
-import LastDiffInfo from "./Services/LastDiffInfo";
 import log from "/logger";
+import DOMObserver from "./Services/DOMObserver";
+import LastDiffInfo from "./Services/LastDiffInfo";
+
+const observer = new DOMObserver();
+const LDI = new LastDiffInfo(observer);
 
 function initLastDiffInfo() {
     try {
         if (!document.getElementById('last-diff-info')) {
             log('Инициализируем Last Diff Info', 'dev');
-            LastDiffInfo.initialize();
+            LDI.initialize();
         } else {
             log('Last diff info уже инициализирован', 'dev', 'warning');
         }
@@ -20,5 +24,6 @@ window.onload = function() {
 
 window.addEventListener('popstate', () => {
     log('Перезагружаем расширение', 'dev');
+    observer.stopAllObserving();
     initLastDiffInfo();
 });

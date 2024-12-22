@@ -1,8 +1,6 @@
 import log from "/logger.js"
 import OsuApi from "./IntermediateOsuApiService";
 
-//TODO: Исправить ошибку с отслеживанием карт при возврате на страницу и перезагрузки скрипта
-
 class DomHelper {
     constructor() {
         this.attemptsToCatchMaps = 5;

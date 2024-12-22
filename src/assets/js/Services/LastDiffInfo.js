@@ -1,33 +1,30 @@
 import OsuApi from './IntermediateOsuApiService';
-import DOMObserver from "./DOMObserver";
 import DomHelper from "./DomHelper";
 import log from "/logger";
 
 class LastDiffInfo {
-    constructor() {
-        this.domObserver = new DOMObserver();
+    constructor(observer) {
+        this.domObserver = observer;
     }
 
     initialize() {
-        this.domObserver.startObserving(
-            '.beatmapsets__items',
-            (addedNodes) => this.setLastDiffInfoToMapsRows(addedNodes),
-            { childList: true, subtree: true }
-        );
-
-        this.domObserver.observeDynamicElement(
-            '.beatmaps-popup__group',
-            (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
-        );
-
         DomHelper.addUniqueElementToDOM('last-diff-info');
-
         DomHelper.catchMapsFromDom()
             .then(beatmapsRows => {
                 log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {
                     this.setLastDiffInfoToMapsRows(beatmapsRows);
                 }
+                this.domObserver.startObserving(
+                    '.beatmapsets__items',
+                    (addedNodes) => this.setLastDiffInfoToMapsRows(addedNodes),
+                    { childList: true, subtree: true }
+                );
+
+                this.domObserver.observeDynamicElement(
+                    '.beatmaps-popup__group',
+                    (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
+                );
             })
             .catch(error => {
                 log(`Произошла ошибка, не удалось загрузить карты со страницы: ${error}`, 'prod', 'error');
@@ -112,4 +109,4 @@ class LastDiffInfo {
     }
 }
 
-export default new LastDiffInfo();
+export default LastDiffInfo;
