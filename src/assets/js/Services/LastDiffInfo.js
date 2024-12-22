@@ -16,13 +16,13 @@ class LastDiffInfo {
         );
 
         this.domObserver.observeDynamicElement(
-            '.beatmaps-popup__group', // Класс для поиска
-            (dynamicElement) => this.processPopupGroupChanges(dynamicElement) // Обработчик найденного элемента
+            '.beatmaps-popup__group',
+            (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
         );
 
         DomHelper.addUniqueElementToDOM('last-diff-info');
 
-        DomHelper.catchMapsFromDom(5)
+        DomHelper.catchMapsFromDom()
             .then(beatmapsRows => {
                 log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {

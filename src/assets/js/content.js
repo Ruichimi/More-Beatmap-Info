@@ -19,5 +19,6 @@ window.onload = function() {
 };
 
 window.addEventListener('popstate', () => {
+    log('Перезагружаем расширение', 'dev');
     initLastDiffInfo();
 });

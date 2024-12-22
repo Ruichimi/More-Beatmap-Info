@@ -1,6 +1,8 @@
 import log from "/logger.js"
 import OsuApi from "./IntermediateOsuApiService";
 
+//TODO: Исправить ошибку с отслеживанием карт при возврате на страницу и перезагрузки скрипта
+
 class DomHelper {
     constructor() {
         this.attemptsToCatchMaps = 5;
@@ -100,9 +102,49 @@ class DomHelper {
 
     addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup) {
         const links = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
+        this.convertLinksToDivs(links);
+
+        const updatedLinks = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
+        updatedLinks.forEach(link => {
+            const beatmapId = link.getAttribute('href') ? link.getAttribute('href').split('/').pop() : 'Unknown';
+            const changeDiffInfoButt = `<button style="background: #711fff; border: 0; border-radius: 10px; margin-left: auto;">(ID: ${beatmapId})</button>`
+            link.style.width = '100%';const beatmapListItem = link.querySelector('.beatmap-list-item');
+
+            if (beatmapListItem) {
+                beatmapListItem.style.display = 'flex';
+                beatmapListItem.style.justifyContent = 'start';
+                beatmapListItem.innerHTML += changeDiffInfoButt;
+
+                const versionBlock = beatmapListItem.querySelector('.beatmap-list-item__version');
+                if (versionBlock) {
+                    const versionLink = document.createElement('a');
+                    versionLink.href = link.getAttribute('href');
+                    versionLink.className = 'u-ellipsis-overflow';
+                    versionLink.innerHTML = versionBlock.innerHTML;
+                    versionBlock.parentNode.replaceChild(versionLink, versionBlock);
+                }
+            } else {
+                log('Не верный элемент', 'dev', 'error');
+            }
+        });
+    }
+
+    convertLinksToDivs(links) {
         links.forEach(link => {
-            const beatmapId = link.href.split('/').pop(); // Берём последний элемент URL
-            link.innerHTML +=  (`ID: ${beatmapId}`);
+            const href = link.getAttribute('href');
+            const div = document.createElement('div');
+            div.className = link.className;
+            div.innerHTML = link.innerHTML;
+            for (const attr of link.attributes) {
+                if (attr.name !== 'href') {
+                    div.setAttribute(attr.name, attr.value);
+                }
+            }
+            if (href) {
+                div.setAttribute('href', href);
+            }
+
+            link.parentNode.replaceChild(div, link);
         });
     }
 }
