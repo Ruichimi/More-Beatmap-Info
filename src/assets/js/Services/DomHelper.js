@@ -4,6 +4,7 @@ import OsuApi from "./IntermediateOsuApiService";
 class DomHelper {
     constructor() {
         this.attemptsToCatchMaps = 5;
+        this.createdElementId = null;
     }
 
     addUniqueElementToDOM(id) {
@@ -11,10 +12,32 @@ class DomHelper {
             const element = document.createElement('div');
             element.id = id;
             document.body.appendChild(element);
+            this.createdElementId = id;
             log(`Элемент с ID "${id}" добавлен`, 'debug');
         } else {
             log(`Элемент с ID "${id}" уже существует`, 'dev', 'warn');
         }
+    }
+
+    removeUniqueElementFromDOM() {
+        if (this.createdElementId && document.getElementById(this.createdElementId)) {
+            const element = document.getElementById(this.createdElementId);
+            element.remove();
+            log(`Элемент с ID "${this.createdElementId}" удалён`, 'debug');
+            this.createdElementId = null;
+        } else {
+            log('Элемент не найден для удаления', 'dev', 'warn');
+        }
+    }
+
+    clearDOM() {
+        const elementsToRemove = [
+            ...document.querySelectorAll('.last-diff-info'),
+            ...document.querySelectorAll('.more-diff-info-btn')
+        ];
+
+        elementsToRemove.forEach(element => element.remove());
+        this.removeUniqueElementFromDOM();
     }
 
     catchMapsFromDom() {
@@ -98,20 +121,30 @@ class DomHelper {
         }, 0);
     }
 
-    addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup) {
+    addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup, callback) {
         const links = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
         this.convertLinksToDivs(links);
 
         const updatedLinks = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
         updatedLinks.forEach(link => {
             const beatmapId = link.getAttribute('href') ? link.getAttribute('href').split('/').pop() : 'Unknown';
-            const changeDiffInfoButt = `<button style="background: #711fff; border: 0; border-radius: 10px; margin-left: auto;">(ID: ${beatmapId})</button>`
-            link.style.width = '100%';const beatmapListItem = link.querySelector('.beatmap-list-item');
+
+            link.style.width = '100%';
+            const beatmapListItem = link.querySelector('.beatmap-list-item');
 
             if (beatmapListItem) {
                 beatmapListItem.style.display = 'flex';
                 beatmapListItem.style.justifyContent = 'start';
-                beatmapListItem.innerHTML += changeDiffInfoButt;
+
+                // Создаем кнопку как DOM-элемент
+                const changeDiffInfoButton = document.createElement('button');
+                changeDiffInfoButton.style.background = '#711fff';
+                changeDiffInfoButton.style.border = '0';
+                changeDiffInfoButton.style.borderRadius = '10px';
+                changeDiffInfoButton.style.marginLeft = 'auto';
+                changeDiffInfoButton.textContent = `(ID: ${beatmapId})`;
+
+                beatmapListItem.appendChild(changeDiffInfoButton);
 
                 const versionBlock = beatmapListItem.querySelector('.beatmap-list-item__version');
                 if (versionBlock) {
@@ -121,6 +154,10 @@ class DomHelper {
                     versionLink.innerHTML = versionBlock.innerHTML;
                     versionBlock.parentNode.replaceChild(versionLink, versionBlock);
                 }
+
+                changeDiffInfoButton.addEventListener('click', () => {
+                    callback(beatmapId);  // Вызываем переданный callback с id карты
+                });
             } else {
                 log('Не верный элемент', 'dev', 'error');
             }

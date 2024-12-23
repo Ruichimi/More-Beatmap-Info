@@ -1,6 +1,7 @@
 import OsuApi from './IntermediateOsuApiService';
 import DomHelper from "./DomHelper";
 import log from "/logger";
+import IntermediateOsuApiService from "./IntermediateOsuApiService";
 
 class LastDiffInfo {
     constructor(observer) {
@@ -8,7 +9,6 @@ class LastDiffInfo {
     }
 
     initialize() {
-        DomHelper.addUniqueElementToDOM('last-diff-info');
         DomHelper.catchMapsFromDom()
             .then(beatmapsRows => {
                 log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
@@ -33,7 +33,9 @@ class LastDiffInfo {
 
     processPopupGroupChanges(beatmapDiffsGroup) {
         log(beatmapDiffsGroup, 'dev');
-        DomHelper.addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup);
+        DomHelper.addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup, (beatmapId) => {
+            this.handleChangeInfoDiffClick(beatmapId);
+        });
     }
 
     setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
@@ -48,7 +50,7 @@ class LastDiffInfo {
                 return this.createBeatmapDifficultyParamsString(deepLastDiffData);
             });
             const mapDiffInfoString = this.createMapParamsString(lastDiffData);
-            this.insertInfoToBeatmapBlock(element, mapDiffInfoString);
+            this.insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId);
         });
     }
 
@@ -89,9 +91,10 @@ class LastDiffInfo {
         hp ${lastDiffData.drain}`;
     }
 
-    insertInfoToBeatmapBlock(element, mapDiffInfoString) {
+    insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId) {
         const infoBlock = document.createElement('div');
-        infoBlock.classList.add('last-diff-info');
+        infoBlock.classList.add('last-diff-info-block');
+        infoBlock.id = mapsetId;
         const statsRow = element.querySelector('.beatmapset-panel__info-row--stats');
         statsRow.parentNode.insertBefore(infoBlock, statsRow.nextSibling);
         infoBlock.innerHTML = mapDiffInfoString;
@@ -106,6 +109,32 @@ class LastDiffInfo {
         return mapsetData.beatmaps.reduce((maxDiff, currentMap) => {
             return currentMap.difficulty_rating > maxDiff.difficulty_rating ? currentMap : maxDiff;
         }, mapsetData.beatmaps[0]);
+    }
+
+    handleChangeInfoDiffClick(beatmapId) {
+        const numericBeatmapId = parseInt(beatmapId, 10);
+        if (isNaN(numericBeatmapId)) {
+            console.error(`Invalid beatmapId: ${beatmapId}`);
+            return;
+        }
+        const beatmapInfo = IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
+        if (!beatmapInfo) {
+            log(beatmapInfo, 'debug');
+            this.handleError();
+            return;
+        }
+        log(beatmapInfo, 'dev');
+        const diffInfoString = this.createMapParamsString(beatmapInfo.map);
+        const beatmapBlock = document.getElementById(beatmapInfo.mapsetId);
+
+        if (beatmapBlock) {
+            beatmapBlock.innerHTML = diffInfoString;
+        }
+    }
+
+    handleError() {
+        const event = new CustomEvent('reloadExtensionRequested');
+        window.dispatchEvent(event);
     }
 }
 

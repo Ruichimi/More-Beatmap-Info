@@ -275,6 +275,23 @@ class IntermediateOsuApiService {
             || '0', 10);
         localStorage.setItem(this.localStorageBeatmapsAmountKey, (currentAmount + 1).toString());
     }
+
+    getDiffInfoByIdFromCache(mapId) {
+        const mapsets = JSON.parse(localStorage.getItem(this.localStorageMapsetsKey));
+        if (!mapsets) {
+            return null;
+        }
+        for (const [key, mapset] of Object.entries(mapsets)) {
+            const mapsetId = key.replace(`${this.localStorageMapsetsItemKey}_`, '');
+
+            for (const map of mapset.beatmaps) {
+                if (map.id === mapId) {
+                    return { map, mapsetId };
+                }
+            }
+        }
+        return null;
+    }
 }
 
 export default new IntermediateOsuApiService();
