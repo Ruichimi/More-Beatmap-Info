@@ -17,7 +17,7 @@ function initLastDiffInfo() {
         }
     } catch (error) {
         log(`Ошибка при инициализации LastDiffInfo: ${error.message}`, 'prod', 'error');
-        LDI.handleError();
+        LDI.reloadExtensionEvent();
     }
 }
 

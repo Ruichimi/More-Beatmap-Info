@@ -107,7 +107,6 @@ class DomHelper {
         tooltip.classList.add('deep-map-params-tooltip');
         tooltip.innerText = mapDiffDeepParams;
         tooltip.mapId = mapId;
-
         const hideTooltip = () => {
             tooltip.remove();
             document.removeEventListener('click', hideTooltip);
@@ -124,39 +123,27 @@ class DomHelper {
     addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup, callback) {
         const links = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
         this.convertLinksToDivs(links);
-
         const updatedLinks = beatmapDiffsGroup.querySelectorAll('.beatmaps-popup-item');
         updatedLinks.forEach(link => {
             const beatmapId = link.getAttribute('href') ? link.getAttribute('href').split('/').pop() : 'Unknown';
-
-            link.style.width = '100%';
             const beatmapListItem = link.querySelector('.beatmap-list-item');
 
             if (beatmapListItem) {
-                beatmapListItem.style.display = 'flex';
-                beatmapListItem.style.justifyContent = 'start';
-
-                // Создаем кнопку как DOM-элемент
                 const changeDiffInfoButton = document.createElement('button');
-                changeDiffInfoButton.style.background = '#711fff';
-                changeDiffInfoButton.style.border = '0';
-                changeDiffInfoButton.style.borderRadius = '10px';
-                changeDiffInfoButton.style.marginLeft = 'auto';
+                changeDiffInfoButton.classList.add('change-diff-info-button');
                 changeDiffInfoButton.textContent = `(ID: ${beatmapId})`;
-
                 beatmapListItem.appendChild(changeDiffInfoButton);
-
                 const versionBlock = beatmapListItem.querySelector('.beatmap-list-item__version');
+
                 if (versionBlock) {
                     const versionLink = document.createElement('a');
-                    versionLink.href = link.getAttribute('href');
                     versionLink.className = 'u-ellipsis-overflow';
+                    versionLink.href = link.getAttribute('href');
                     versionLink.innerHTML = versionBlock.innerHTML;
                     versionBlock.parentNode.replaceChild(versionLink, versionBlock);
                 }
-
                 changeDiffInfoButton.addEventListener('click', () => {
-                    callback(beatmapId);  // Вызываем переданный callback с id карты
+                    callback(beatmapId);
                 });
             } else {
                 log('Не верный элемент', 'dev', 'error');
@@ -178,7 +165,6 @@ class DomHelper {
             if (href) {
                 div.setAttribute('href', href);
             }
-
             link.parentNode.replaceChild(div, link);
         });
     }

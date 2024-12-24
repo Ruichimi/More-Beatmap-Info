@@ -33,3 +33,19 @@
     left: 50%;
     transform: translate(-50%, -50%);
 }
+
+.change-diff-info-button {
+    background: #711fff;
+    border: 0;
+    border-radius: 10px;
+    margin-left: auto;
+}
+
+.beatmap-list-item {
+    display: flex !important;
+    justify-content: start;
+}
+
+.beatmaps-popup-item {
+    width: 100% !important;
+}

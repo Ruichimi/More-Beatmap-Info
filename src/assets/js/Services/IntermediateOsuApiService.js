@@ -76,7 +76,7 @@ class IntermediateOsuApiService {
             const requiredBeatmapFields = ["aim_difficulty", "speed_difficulty", "speed_note_count", "slider_factor", "overall_difficulty", "ranked_date", "last_updated"];
             const beatmapDataFiltered = this.filterObject(response.data.attributes, requiredBeatmapFields);
             const dateForCache = this.getDateForCache(beatmapDataFiltered);
-            const beatmapDataFilteredWithData = { ...beatmapDataFiltered, date: dateForCache };
+            const beatmapDataFilteredWithData = {...beatmapDataFiltered, date: dateForCache};
             this.cacheDataToObjectWithId(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey, beatmapDataFilteredWithData);
             this.clearBeatmapCacheIfNeeded(5, 3)
             return beatmapDataFilteredWithData;
@@ -276,19 +276,31 @@ class IntermediateOsuApiService {
         localStorage.setItem(this.localStorageBeatmapsAmountKey, (currentAmount + 1).toString());
     }
 
+    /**
+     * Searching for beatmap info in the beatmapsets cache by its ID.
+     *
+     * The function might work slowly if there are too many beatmapsets in the cache,
+     * and it is used for non-constant function calls.
+     *
+     * @param {int} mapId - id of beatmap in beatmapset.
+     * @returns {Object|null}
+     */
+
     getDiffInfoByIdFromCache(mapId) {
         const mapsets = JSON.parse(localStorage.getItem(this.localStorageMapsetsKey));
-        if (!mapsets) {
-            return null;
-        }
-        for (const [key, mapset] of Object.entries(mapsets)) {
-            const mapsetId = key.replace(`${this.localStorageMapsetsItemKey}_`, '');
+        if (!mapsets) return null;
+        try {
+            for (const [key, mapset] of Object.entries(mapsets)) {
+                const mapsetId = key.replace(`${this.localStorageMapsetsItemKey}_`, '');
 
-            for (const map of mapset.beatmaps) {
-                if (map.id === mapId) {
-                    return { map, mapsetId };
+                for (const map of mapset.beatmaps) {
+                    if (map.id === mapId) {
+                        return {map, mapsetId};
+                    }
                 }
             }
+        } catch (e) {
+            log(`Failed to parse mapsets from localStorage: ${e}`, 'dev', 'error');
         }
         return null;
     }

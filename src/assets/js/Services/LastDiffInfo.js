@@ -3,6 +3,8 @@ import DomHelper from "./DomHelper";
 import log from "/logger";
 import IntermediateOsuApiService from "./IntermediateOsuApiService";
 
+//TODO: Проверять необходимость обновления информации и по возможности её обновление после перезагрузки расширения
+
 class LastDiffInfo {
     constructor(observer) {
         this.domObserver = observer;
@@ -111,28 +113,40 @@ class LastDiffInfo {
         }, mapsetData.beatmaps[0]);
     }
 
+    /**
+     * Handles the click to change diff info for a given beatmapId, in beatmap card in DOM.
+     * Converts and validates the `beatmapId`, retrieves the diff info from cache,
+     * and updates the display or reloads the extension if not found. For example, if cache was cleaned.
+     *
+     * @param beatmapId {string|int}
+     * @returns {void}
+     */
+
     handleChangeInfoDiffClick(beatmapId) {
         const numericBeatmapId = parseInt(beatmapId, 10);
         if (isNaN(numericBeatmapId)) {
-            console.error(`Invalid beatmapId: ${beatmapId}`);
+            log(`Invalid beatmapId: ${beatmapId}`, 'dev', 'error');
             return;
         }
         const beatmapInfo = IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
         if (!beatmapInfo) {
-            log(beatmapInfo, 'debug');
-            this.handleError();
+            log(beatmapInfo, 'dev');
+            this.reloadExtensionEvent();
             return;
         }
-        log(beatmapInfo, 'dev');
-        const diffInfoString = this.createMapParamsString(beatmapInfo.map);
-        const beatmapBlock = document.getElementById(beatmapInfo.mapsetId);
+        log(beatmapInfo, 'debug');
+        this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
+    }
 
+    updateBeatmapInfoDOM(beatmapInfo, mapsetId) {
+        const diffInfoString = this.createMapParamsString(beatmapInfo);
+        const beatmapBlock = document.getElementById(mapsetId);
         if (beatmapBlock) {
             beatmapBlock.innerHTML = diffInfoString;
         }
     }
 
-    handleError() {
+    reloadExtensionEvent() {
         const event = new CustomEvent('reloadExtensionRequested');
         window.dispatchEvent(event);
     }
