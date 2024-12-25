@@ -11,7 +11,7 @@ class LastDiffInfo {
     }
 
     initialize() {
-        DomHelper.catchMapsFromDom()
+        DomHelper.catchBeatmapsFromDOM()
             .then(beatmapsRows => {
                 log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {
@@ -49,7 +49,7 @@ class LastDiffInfo {
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
             log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
-            DomHelper.addDeepInfoButtonToMap(element, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
+            DomHelper.addDeepInfoButtonToBeatmap(element, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
                 return this.createBeatmapDifficultyParamsString(deepLastDiffData);
             });
             const mapDiffInfoString = this.createMapParamsString(lastDiffData);
@@ -143,7 +143,7 @@ class LastDiffInfo {
     updateBeatmapInfoDOM(beatmapInfo, mapsetId) {
         const diffInfoString = this.createMapParamsString(beatmapInfo);
         const beatmapBlock = document.getElementById(mapsetId);
-        log(beatmapBlock, 'dev');
+        log(beatmapBlock, 'debug');
         if (beatmapBlock) {
             beatmapBlock.innerHTML = diffInfoString;
         }

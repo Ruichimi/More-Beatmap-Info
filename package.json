@@ -3,9 +3,7 @@
         "axios": "^1.6.7",
         "cors": "^2.8.5",
         "curl": "^0.1.4",
-        "express": "^4.19.2",
-        "osu-web.js": "^2.2.0",
-        "tippy.js": "^6.3.7"
+        "express": "^4.19.2"
     },
     "devDependencies": {
         "vite": "^5.1.4",

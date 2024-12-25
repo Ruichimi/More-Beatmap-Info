@@ -78,7 +78,7 @@ class IntermediateOsuApiService {
             const dateForCache = this.getDateForCache(beatmapDataFiltered);
             const beatmapDataFilteredWithData = {...beatmapDataFiltered, date: dateForCache};
             this.cacheDataToObjectWithId(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey, beatmapDataFilteredWithData);
-            this.clearBeatmapCacheIfNeeded(5, 3)
+            this.clearBeatmapCacheIfNeeded(50, 40)
             return beatmapDataFilteredWithData;
         } catch (error) {
             log(`Ошибка: ${error}`, 'dev', 'error');
