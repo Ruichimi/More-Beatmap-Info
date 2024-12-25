@@ -1,6 +1,8 @@
-.last-diff-info {
+.more-beatmap-info {
     font-size: 14px;
     white-space: nowrap;
+    height: 15px;
+    margin-bottom: 6px;
 }
 
 .beatmapset-panel {
@@ -10,12 +12,6 @@
 .beatmaps-popup::before {
     --panel-height: 115px;
 }
-
-.last-diff-info {
-    height: 15px;
-    margin-bottom: 6px;
-}
-
 .more-diff-info-btn {
     background: gray;
     border-radius: 100%;

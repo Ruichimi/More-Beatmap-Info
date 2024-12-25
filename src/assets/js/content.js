@@ -1,23 +1,23 @@
 import log from "/logger";
 import DOMObserver from "./Services/DOMObserver";
-import LastDiffInfo from "./Services/LastDiffInfo";
+import MoreBeatmapInfo from "./Services/MoreBeatmapInfo";
 import DomHelper from "./Services/DomHelper";
 
 const observer = new DOMObserver();
-const LDI = new LastDiffInfo(observer);
+const MBI = new MoreBeatmapInfo(observer);
 
-function initLastDiffInfo() {
+function initMoreBeatmapInfo() {
     try {
         if (!document.getElementById('last-diff-info')) {
             DomHelper.addUniqueElementToDOM('last-diff-info');
             log('Инициализируем Last Diff Info', 'dev');
-            LDI.initialize();
+            MBI.initialize();
         } else {
             log('Last diff info уже инициализирован', 'dev', 'warning');
         }
     } catch (error) {
         log(`Ошибка при инициализации LastDiffInfo: ${error.message}`, 'prod', 'error');
-        LDI.reloadExtensionEvent();
+        MBI.reloadExtensionEvent();
     }
 }
 
@@ -27,11 +27,11 @@ function reloadExtension(withDom = false) {
     if (withDom) {
         DomHelper.clearDOM();
     }
-    initLastDiffInfo();
+    initMoreBeatmapInfo();
 }
 
 window.onload = function() {
-    initLastDiffInfo();
+    initMoreBeatmapInfo();
 };
 
 window.addEventListener('popstate', () => {

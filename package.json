@@ -14,23 +14,26 @@
         "build": "vite build",
         "nodemon": "nodemon server/server.js"
     },
-    "name": "last-mapdiff-info",
+    "name": "more-beatmap-info",
     "version": "1.0.0",
     "description": "Adds information about the last difficulty from the mapset to the maps list page",
     "main": "src/assets/js/content.js",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/Cadregich/Last_Mapdiff_Info_osu.git"
+        "url": "git+https://github.com/Cadregich/More-Beatmap-Info"
     },
     "keywords": [
         "osu",
+        "browser extension",
+        "osu web",
         "mapset",
-        "lastdiff"
+        "beatmaps info",
+        "last diff info"
     ],
     "author": "Cadregich",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/Cadregich/Last_Mapdiff_Info_osu/issues"
+        "url": "https://github.com/Cadregich/More-Beatmap-Info/issues"
     },
-    "homepage": "https://github.com/Cadregich/Last_Mapdiff_Info_osu#readme"
+    "homepage": "https://github.com/Cadregich/More-Beatmap-Info#readme"
 }

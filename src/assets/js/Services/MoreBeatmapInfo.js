@@ -5,7 +5,7 @@ import IntermediateOsuApiService from "./IntermediateOsuApiService";
 
 //TODO: Проверять необходимость обновления информации и по возможности её обновление после перезагрузки расширения
 
-class LastDiffInfo {
+class MoreBeatmapInfo {
     constructor(observer) {
         this.domObserver = observer;
     }
@@ -84,7 +84,7 @@ class LastDiffInfo {
     }
 
     createMapParamsString(lastDiffData) {
-        return `<div class="last-diff-info">
+        return `<div class="more-beatmap-info">
         ${lastDiffData.difficulty_rating}★
         bpm ${lastDiffData.bpm}
         combo ${lastDiffData.max_combo}
@@ -96,7 +96,7 @@ class LastDiffInfo {
 
     insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId) {
         const infoBlock = document.createElement('div');
-        infoBlock.classList.add('last-diff-info-block');
+        infoBlock.classList.add('more-beatmap-info-block');
         infoBlock.id = mapsetId;
         const statsRow = element.querySelector('.beatmapset-panel__info-row--stats');
         statsRow.parentNode.insertBefore(infoBlock, statsRow.nextSibling);
@@ -155,4 +155,4 @@ class LastDiffInfo {
     }
 }
 
-export default LastDiffInfo;
+export default MoreBeatmapInfo;

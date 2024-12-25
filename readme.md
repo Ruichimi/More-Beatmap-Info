@@ -1,3 +1,3 @@
-<h1>Last diff info</h1>
+<h1>osu! More Beatmap Info</h1>
 
-Add`s an information about last difficulty from mapset to maps list on osu website
+"More Beatmap Info" is an extension for the osu website's beatmap selection page that adds useful information for choosing a beatmap. 

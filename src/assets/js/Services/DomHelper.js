@@ -33,7 +33,7 @@ class DomHelper {
 
     clearDOM() {
         const elementsToRemove = [
-            ...document.querySelectorAll('.last-diff-info'),
+            ...document.querySelectorAll('.more-beatmap-info'),
             ...document.querySelectorAll('.more-diff-info-btn'),
             //...document.querySelectorAll('.change-diff-info-button') The operation can be resource-intensive, and currently there is no need to remove these buttons
         ];

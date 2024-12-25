@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "last-mapdiff-info",
+    "name": "osu! More Beatmap Info",
     "version": "0.1",
-    "description": "Adds information about the last difficulty from the mapset to the maps list page",
+    "description": "This Chrome extension enhances the osu! beatmap selection page by providing additional details to help you choose the right beatmaps more efficiently and conveniently",
     "permissions": [
         "activeTab"
     ],
