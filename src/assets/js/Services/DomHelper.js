@@ -41,6 +41,7 @@ class DomHelper {
     }
 
     catchMapsFromDom() {
+        let attemptsToCatchMaps = this.attemptsToCatchMaps;
         log('Вызвана функция catchMapsFromDom', 'debug');
         return new Promise((resolve, reject) => {
             const attemptToCatchMaps = () => {
@@ -48,9 +49,9 @@ class DomHelper {
                 if (beatmapsRows.length > 0) {
                     log('Получили карты', 'dev');
                     resolve(beatmapsRows);
-                } else if (this.attemptsToCatchMaps > 1) {
+                } else if (attemptsToCatchMaps > 1) {
                     log('Не удалось получить карты с DOM, повторяем попытку', 'dev', 'warn');
-                    this.attemptsToCatchMaps--;
+                    attemptsToCatchMaps--;
                     setTimeout(() => {
                         attemptToCatchMaps();
                     }, 200);
@@ -71,17 +72,28 @@ class DomHelper {
             const moreDiffInfoBtn = document.createElement('button');
             moreDiffInfoBtn.classList.add('more-diff-info-btn');
             moreDiffInfoBtn.innerText = '...';
+            element.mapId = mapId;
             moreDiffInfoBtn.addEventListener('click', async () => {
-                await this.showDeepMapData(mapId, element, callback);
+                await this.showDeepMapData(element, callback);
             });
             mapBlockLeftMenu.insertAdjacentElement('afterbegin', moreDiffInfoBtn);
         }
     }
 
-    async showDeepMapData(mapId, element, callback) {
-        log(mapId, 'debug');
+    updateButtonMapId(newMapId, mapId) {
+        const beatmapBlock = document.getElementById(`mapset-id:${mapId}`);
+        beatmapBlock.mapId = newMapId;
+        log(beatmapBlock.mapId, 'debug');
+    }
+
+    async showDeepMapData(element, callback) {
         const existingTooltip = document.querySelector('.deep-map-params-tooltip');
-        if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
+        const mapId = element.mapId;
+        log(mapId, 'debug');
+        log('Show deep beatmap data button has pressed', 'debug');
+        log(`Is tooltip already exists: ${existingTooltip ? 'yes' : 'no'}`, 'debug');
+        if (existingTooltip && existingTooltip.mapId === mapId) {
+            log('Tooltip was removed', 'dev');
             existingTooltip.remove();
             return;
         }
@@ -95,14 +107,15 @@ class DomHelper {
         }
     }
 
+    /**
+     * Creates an HTML element for the tooltip with detailed beatmap data and appends it to the DOM.
+     *
+     * When creating the tooltip, an event listener is registered that, upon clicking anywhere on the site,
+     * will hide the tooltip and remove this event listener. This could confuse the developer if the button
+     * that triggers the tooltip is clicked again, as the script will remove the tooltip due to the click
+     * event registered on the DOM(I --fu***d-- debugged because of this for an hour >_<)
+     */
     displayTooltip(mapDiffDeepParams, mapId, element) {
-        const existingTooltip = document.querySelector('.deep-map-params-tooltip');
-
-        if (existingTooltip && parseInt(existingTooltip.mapId) === mapId) {
-            existingTooltip.remove();
-            return;
-        }
-
         const tooltip = document.createElement('div');
         tooltip.classList.add('deep-map-params-tooltip');
         tooltip.innerText = mapDiffDeepParams;
@@ -110,7 +123,7 @@ class DomHelper {
         const hideTooltip = () => {
             tooltip.remove();
             document.removeEventListener('click', hideTooltip);
-            log('Подсказка убрана', 'dev');
+            log('Tooltip was removed because of click on the page', 'dev');
         };
 
         element.before(tooltip);

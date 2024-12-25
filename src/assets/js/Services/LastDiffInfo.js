@@ -45,6 +45,7 @@ class LastDiffInfo {
 
         beatmapsBlocks.map(async (element) => {
             const mapsetId = this.getMapsetId(element);
+            element.id = `mapset-id:${mapsetId}`;
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
             log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
@@ -136,11 +137,13 @@ class LastDiffInfo {
         }
         log(beatmapInfo, 'debug');
         this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
+        DomHelper.updateButtonMapId(beatmapId, beatmapInfo.mapsetId);
     }
 
     updateBeatmapInfoDOM(beatmapInfo, mapsetId) {
         const diffInfoString = this.createMapParamsString(beatmapInfo);
         const beatmapBlock = document.getElementById(mapsetId);
+        log(beatmapBlock, 'dev');
         if (beatmapBlock) {
             beatmapBlock.innerHTML = diffInfoString;
         }
