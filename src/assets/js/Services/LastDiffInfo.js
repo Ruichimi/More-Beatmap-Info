@@ -137,7 +137,7 @@ class LastDiffInfo {
         }
         log(beatmapInfo, 'debug');
         this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
-        DomHelper.updateButtonMapId(beatmapId, beatmapInfo.mapsetId);
+        DomHelper.updateMapIdBtn(beatmapId, beatmapInfo.mapsetId);
     }
 
     updateBeatmapInfoDOM(beatmapInfo, mapsetId) {

@@ -71,18 +71,18 @@ class DomHelper {
         log(`Add deep info button to map: ${mapId}`, 'debug');
         if (gameMode === 'osu') {
             const beatmapBlockRightMenu = beatmapBlock.querySelector('.beatmapset-panel__menu');
-            const moreDiffInfoButt = document.createElement('button');
-            moreDiffInfoButt.classList.add('more-diff-info-btn');
-            moreDiffInfoButt.innerText = '...';
+            const moreDiffInfoBtn = document.createElement('button');
+            moreDiffInfoBtn.classList.add('more-diff-info-btn');
+            moreDiffInfoBtn.innerText = '...';
             beatmapBlock.beatmapDeepInfoId = mapId;
-            moreDiffInfoButt.addEventListener('click', async () => {
+            moreDiffInfoBtn.addEventListener('click', async () => {
                 await this.showDeepBeatmapData(beatmapBlock, callback);
             });
-            beatmapBlockRightMenu.insertAdjacentElement('afterbegin', moreDiffInfoButt);
+            beatmapBlockRightMenu.insertAdjacentElement('afterbegin', moreDiffInfoBtn);
         }
     }
 
-    updateButtonMapId(newBeatmapId, beatmapId) {
+    updateMapIdBtn(newBeatmapId, beatmapId) {
         const beatmapBlock = document.getElementById(`mapset-id:${beatmapId}`);
         beatmapBlock.beatmapDeepInfoId = newBeatmapId;
         log(beatmapBlock.beatmapDeepInfoId, 'debug');

@@ -11,12 +11,17 @@ import log from "/logger";
 
 class IntermediateOsuApiService {
     constructor() {
+        this.serverUrl = "http://localhost:3000";
+        //cache settings
         this.localStorageMapsetsKey = "beatmapsetsCache";
         this.localStorageMapsetsItemKey = "beatmapset";
         this.localStorageBeatmapDeepInfoKey = "beatmapsDeepInfoCache";
         this.localStorageBeatmapDeepInfoItemKey = "beatmap";
         this.localStorageBeatmapsAmountKey = "beatmapsCount";
-        this.serverUrl = "http://localhost:3000";
+        this.mapsetsCacheLimit = 600;
+        this.mapsetsCacheClearItems = 300;
+        this.beatmapsCacheLimit = 50;
+        this.beatmapsCacheClearItems = 40;
     }
 
     /**
@@ -27,7 +32,6 @@ class IntermediateOsuApiService {
      * @param {string} mapsetId - The unique identifier of the mapset.
      * @returns {Promise<Object>} - The filtered mapset data.
      */
-
     async getMapsetData(mapsetId) {
         const beatmapsetDataFromCache = this.getDataFromCacheById(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey);
         if (beatmapsetDataFromCache) {
@@ -46,7 +50,7 @@ class IntermediateOsuApiService {
             this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetFilteredWithDate);
             //console.log(beatmapsetDataFiltered);
             this.incrementBeatmapsAmountsCache();
-            this.clearBeatmapsetsCacheIfNeeded(600, 300);
+            this.clearBeatmapsetsCacheIfNeeded();
             return beatmapsetDataFiltered;
         } catch (error) {
             log(`Ошибка: ${error}`, 'dev', 'error');
@@ -63,7 +67,6 @@ class IntermediateOsuApiService {
      * @returns {Promise<Object>} - The filtered beatmap data.
      * @throws {Error} - Throws an error if the data cannot be retrieved.
      */
-
     async getBeatmapData(beatmapId) {
         const beatmapDataFromCache = this.getDataFromCacheById(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey);
         if (beatmapDataFromCache) {
@@ -78,7 +81,7 @@ class IntermediateOsuApiService {
             const dateForCache = this.getDateForCache(beatmapDataFiltered);
             const beatmapDataFilteredWithData = {...beatmapDataFiltered, date: dateForCache};
             this.cacheDataToObjectWithId(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey, beatmapDataFilteredWithData);
-            this.clearBeatmapCacheIfNeeded(50, 40)
+            this.clearBeatmapsCacheIfNeeded()
             return beatmapDataFilteredWithData;
         } catch (error) {
             log(`Ошибка: ${error}`, 'dev', 'error');
@@ -87,24 +90,23 @@ class IntermediateOsuApiService {
     }
 
     /**
-     * Clears the cache if the number of beatmaps exceeds the cache limit for beatmapsets.
+     * Clears the cache if the number of beatmap sets exceeds the cache limit for beatmap sets.
      * Removes the oldest items from the cache and updates the count in localStorage.
+     * The cache limit and the number of items to be removed are defined in the constructor
+     * with the variables `mapsetsCacheLimit` and `mapsetsCacheClearItems`.
      *
-     * @param {number} cacheLimit - The cache limit for beatmaps.
-     * @param {number} removedItemsFromCacheAmount - The number of items to remove from the cache.
      * @returns {void}
      */
-
-    clearBeatmapsetsCacheIfNeeded(cacheLimit, removedItemsFromCacheAmount) {
+    clearBeatmapsetsCacheIfNeeded() {
         const beatmapsInCacheAmount = parseInt(localStorage.getItem(
             this.localStorageBeatmapsAmountKey), 10) || 0;
-        if (beatmapsInCacheAmount >= cacheLimit) {
+        if (beatmapsInCacheAmount >= this.mapsetsCacheLimit) {
             const beatmapsInCacheAmountInCache = this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey);
             //Проверяем сам объект на случай неправильного сохранённого значения
-            if (beatmapsInCacheAmountInCache >= cacheLimit) {
-                this.removeOldestItemsFromCache(this.localStorageMapsetsKey, removedItemsFromCacheAmount);
+            if (beatmapsInCacheAmountInCache >= this.mapsetsCacheLimit) {
+                this.removeOldestItemsFromCache(this.localStorageMapsetsKey, this.mapsetsCacheClearItems);
                 localStorage.setItem(this.localStorageBeatmapsAmountKey, (beatmapsInCacheAmountInCache
-                    - removedItemsFromCacheAmount).toString());
+                    - this.mapsetsCacheClearItems).toString());
                 log('Очистили часть кеша для сетов карт', 'dev');
             } else {
                 localStorage.setItem(this.localStorageBeatmapsAmountKey, beatmapsInCacheAmountInCache.toString());
@@ -115,16 +117,15 @@ class IntermediateOsuApiService {
     /**
      * Clears the cache if the number of beatmaps exceeds the cache limit for beatmaps.
      * Removes the oldest items from the cache and updates the count in localStorage.
+     * The cache limit and the number of items to be removed are defined in the constructor
+     * with the variables `beatmapsCacheLimit` and `beatmapsCacheClearItems`.
      *
-     * @param {number} cacheLimit - The cache limit for beatmaps.
-     * @param {number} removedItemsFromCacheAmount - The number of items to remove from the cache.
      * @returns {void}
      */
-
-    clearBeatmapCacheIfNeeded(cacheLimit, removedItemsFromCacheAmount) {
+    clearBeatmapsCacheIfNeeded() {
         const beatmapsInCacheAmountInCache = this.getItemsCountFromLocalStorage(this.localStorageBeatmapDeepInfoKey);
-        if (beatmapsInCacheAmountInCache >= cacheLimit) {
-            this.removeOldestItemsFromCache(this.localStorageBeatmapDeepInfoKey, removedItemsFromCacheAmount);
+        if (beatmapsInCacheAmountInCache >= this.beatmapsCacheLimit) {
+            this.removeOldestItemsFromCache(this.localStorageBeatmapDeepInfoKey, this.beatmapsCacheClearItems);
             log('Очистили часть кеша для подробностей карты', 'dev');
         }
     }
@@ -138,7 +139,6 @@ class IntermediateOsuApiService {
      * @param {any} data - The data to be stored, which will be serialized into JSON format.
      * @returns {void}
      */
-
     cacheDataToObjectWithId(cacheItemId, cacheItemName, cacheName, data) {
         const localStorageObject = JSON.parse(localStorage.getItem(cacheName)) || {};
         const cacheKey = `${cacheItemName}_${cacheItemId}`;
@@ -154,7 +154,6 @@ class IntermediateOsuApiService {
      * @param {string} cacheName - The name of the cache in localStorage where the data might be stored.
      * @returns {any|null} - The cached data associated with the specified ID and name, or null if not found.
      */
-
     getDataFromCacheById(cacheItemId, cacheItemName, cacheName) {
         const cacheKey = `${cacheItemName}_${cacheItemId}`;
         const beatmapsetsCache = JSON.parse(localStorage.getItem(cacheName));
@@ -171,7 +170,6 @@ class IntermediateOsuApiService {
      * @param {Array} requiredFields - An array of keys to retain in the object.
      * @returns {Object} A new object containing only the keys specified in `requiredFields`.
      */
-
     filterObject(beatmapData, requiredFields) {
         return Object.keys(beatmapData)
             .filter((key) => requiredFields.includes(key))
@@ -189,7 +187,6 @@ class IntermediateOsuApiService {
      * @param {number} count - The number of oldest items to retrieve.
      * @returns {Array} An array of the oldest items, each including its original key and data.
      */
-
     getOldestItemsFromCache(key, count) {
         const storageData = JSON.parse(localStorage.getItem(key)) || {};
         const storageArrayWithNames = Object.keys(storageData).map(itemKey => {
@@ -211,7 +208,6 @@ class IntermediateOsuApiService {
      * @param {number} count - The number of oldest items to remove.
      * @returns {void}
      */
-
     removeOldestItemsFromCache(key, count) {
         const oldestItems = this.getOldestItemsFromCache(key, count);
         log(oldestItems, 'debug');
@@ -230,7 +226,6 @@ class IntermediateOsuApiService {
      * @param {Object} beatmapsetData - The data object containing date fields.
      * @returns {string|null} The ranked date if available; otherwise, the last updated date.
      */
-
     getDateForCache(beatmapsetData) {
         return beatmapsetData.ranked_date || beatmapsetData.last_updated || new Date().toISOString();
     }
@@ -242,7 +237,6 @@ class IntermediateOsuApiService {
      * @param {string} date - The date to add to the object.
      * @returns {Object} The same object with the added date property.
      */
-
     addDateToObject(object, date) {
         object.date = date;
         return object;
@@ -254,7 +248,6 @@ class IntermediateOsuApiService {
      * @param {string} key - The localStorage key where the object is stored.
      * @returns {number} The number of items in the stored object.
      */
-
     getItemsCountFromLocalStorage(key) {
         const storageData = JSON.parse(localStorage.getItem(key)) || {};
         log(storageData, 'debug');
@@ -269,7 +262,6 @@ class IntermediateOsuApiService {
      *
      * @returns {void}
      */
-
     incrementBeatmapsAmountsCache() {
         const currentAmount = parseInt(localStorage.getItem(this.localStorageBeatmapsAmountKey)
             || '0', 10);
@@ -285,7 +277,6 @@ class IntermediateOsuApiService {
      * @param {int} mapId - id of beatmap in beatmapset.
      * @returns {Object|null}
      */
-
     getDiffInfoByIdFromCache(mapId) {
         const mapsets = JSON.parse(localStorage.getItem(this.localStorageMapsetsKey));
         if (!mapsets) return null;
