@@ -3,7 +3,7 @@ import DomHelper from "./DomHelper";
 import log from "/logger";
 import IntermediateOsuApiService from "./IntermediateOsuApiService";
 
-//TODO: Проверять необходимость обновления информации и по возможности её обновление после перезагрузки расширения
+//TODO: Оптимизировать обращения к DOM
 
 class MoreBeatmapInfo {
     constructor(observer) {
@@ -45,9 +45,10 @@ class MoreBeatmapInfo {
 
         beatmapsBlocks.map(async (element) => {
             const mapsetId = this.getMapsetId(element);
-            element.id = `mapset-id:${mapsetId}`;
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+            element.setAttribute('mapsetId', mapsetId);
+            element.setAttribute('beatmapId', lastDiffData.id);
             log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
             DomHelper.addDeepInfoButtonToBeatmap(element, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
                 return this.createBeatmapDifficultyParamsString(deepLastDiffData);
@@ -124,20 +125,57 @@ class MoreBeatmapInfo {
      */
 
     handleChangeInfoDiffClick(beatmapId) {
+        const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
+        if (isNaN(numericBeatmapId)) return;
+
+        if (this.isInfoAlreadyDisplayed(beatmapId)) return;
+
+        const beatmapInfo = this.getBeatmapInfoFromCache(numericBeatmapId);
+        if (!beatmapInfo) {
+            this.handleMissingBeatmapInfo(numericBeatmapId);
+            return;
+        }
+
+        this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
+        DomHelper.updateMapIdBtn(beatmapId, beatmapInfo.mapsetId);
+    }
+
+    convertToNumericBeatmapId(beatmapId) {
         const numericBeatmapId = parseInt(beatmapId, 10);
         if (isNaN(numericBeatmapId)) {
             log(`Invalid beatmapId: ${beatmapId}`, 'dev', 'error');
-            return;
         }
-        const beatmapInfo = IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
-        if (!beatmapInfo) {
-            log(beatmapInfo, 'dev');
-            this.reloadExtensionEvent();
-            return;
+        return numericBeatmapId;
+    }
+
+    isInfoAlreadyDisplayed(beatmapId) {
+        const existingDisplayingInfo = document.querySelector(`[beatmapId="${beatmapId}"]`);
+        if (existingDisplayingInfo) {
+            log('A block already contains current info', 'dev');
+            return true;
         }
-        log(beatmapInfo, 'debug');
-        this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
-        DomHelper.updateMapIdBtn(beatmapId, beatmapInfo.mapsetId);
+        return false;
+    }
+
+    getBeatmapInfoFromCache(numericBeatmapId) {
+        return IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
+    }
+
+    handleMissingBeatmapInfo(numericBeatmapId) {
+        log('Beatmap info not found, reloading extension...', 'dev');
+        this.reloadExtensionEvent();
+
+        setTimeout(() => {
+            const retryBeatmapInfo = IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
+            if (retryBeatmapInfo) {
+                log(retryBeatmapInfo, 'debug');
+                this.updateBeatmapInfoDOM(retryBeatmapInfo.map, retryBeatmapInfo.mapsetId);
+                DomHelper.updateMapIdBtn(numericBeatmapId, retryBeatmapInfo.mapsetId);
+            } else {
+                log('Unable to fetch beatmap info after reload in 1.3 sec\nProbably bad internet connection',
+                    'dev', 'error');
+            }
+        }, 1300);
     }
 
     updateBeatmapInfoDOM(beatmapInfo, mapsetId) {

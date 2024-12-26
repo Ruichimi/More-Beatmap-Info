@@ -74,7 +74,6 @@ class DomHelper {
             const moreDiffInfoBtn = document.createElement('button');
             moreDiffInfoBtn.classList.add('more-diff-info-btn');
             moreDiffInfoBtn.innerText = '...';
-            beatmapBlock.beatmapDeepInfoId = mapId;
             moreDiffInfoBtn.addEventListener('click', async () => {
                 await this.showDeepBeatmapData(beatmapBlock, callback);
             });
@@ -82,15 +81,14 @@ class DomHelper {
         }
     }
 
-    updateMapIdBtn(newBeatmapId, beatmapId) {
-        const beatmapBlock = document.getElementById(`mapset-id:${beatmapId}`);
-        beatmapBlock.beatmapDeepInfoId = newBeatmapId;
-        log(beatmapBlock.beatmapDeepInfoId, 'debug');
+    updateMapIdBtn(newBeatmapId, mapsetId) {
+        const beatmapBlock = document.querySelector(`[mapsetId="${mapsetId}"]`);
+        beatmapBlock.setAttribute('beatmapId', newBeatmapId);
     }
 
     async showDeepBeatmapData(beatmapBlock, callback) {
         const existingTooltip = document.querySelector('.deep-beatmap-params-tooltip');
-        const beatmapId = beatmapBlock.beatmapDeepInfoId;
+        const beatmapId = beatmapBlock.getAttribute('beatmapId');
         log('Show deep beatmap data button has pressed', 'debug');
         log(`Is tooltip already exists: ${existingTooltip ? 'yes' : 'no'}`, 'debug');
         if (existingTooltip && existingTooltip.beatmapId === beatmapId) {
