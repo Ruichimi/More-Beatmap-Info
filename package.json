@@ -3,11 +3,13 @@
         "axios": "^1.6.7",
         "cors": "^2.8.5",
         "curl": "^0.1.4",
-        "express": "^4.19.2"
+        "express": "^4.19.2",
+        "rosu-pp-js": "^2.0.0",
+        "vite-plugin-commonjs": "^0.10.4"
     },
     "devDependencies": {
-        "vite": "^5.1.4",
-        "nodemon": "3.1.7"
+        "nodemon": "3.1.7",
+        "vite": "^5.1.4"
     },
     "scripts": {
         "dev": "vite build --watch",

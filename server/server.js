@@ -4,6 +4,7 @@ const port = 3000;
 const cors = require('cors');
 const path = require('path');
 const osuApiHelper = require(path.resolve(__dirname, './services/OsuApiHelper'));
+const rosu = require("rosu-pp-js");
 
 app.use(cors());
 
@@ -33,10 +34,25 @@ app.get('/api/BeatmapData/:id', async (req, res) => {
     }
 });
 
+app.post('/api/BeatmapPP/:id', express.json(), async (req, res) => {
+    const { id } = req.params;
+    const { beatmap } = req.body;
+    try {
+        console.log("ID:", id);
+        console.log("Beatmap:", beatmap);
+        const map = new rosu.Beatmap(beatmap);
+        const maxAttrs = new rosu.Performance({ mods: "CL" }).calculate(map);
+        res.json(maxAttrs);
+    } catch (error) {
+        console.error("Ошибка получения данных:", error);
+        res.status(500).json({ error: "Ошибка получения данных" });
+    }
+});
+
 app.listen(port, async () => {
     console.log(`Сервер запущен на http://localhost:${port}`);
     try {
-        await osuApiHelper.init();  // Вызываем init после запуска сервера
+        await osuApiHelper.init();
         console.log("OsuApiHelper инициализирован.");
     } catch (error) {
         console.error("Ошибка при инициализации OsuApiHelper:", error);
