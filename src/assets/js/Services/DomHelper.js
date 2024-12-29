@@ -1,5 +1,8 @@
 import log from "/logger.js"
 import OsuApi from "./IntermediateOsuApiService";
+import IntermediateOsuApiService from "./IntermediateOsuApiService";
+
+//TODO: Пофиксить ошибку при попытке получить полную информацию о грейвярд карте
 
 class DomHelper {
     constructor() {
@@ -98,12 +101,21 @@ class DomHelper {
         }
 
         try {
+            const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(beatmapId);
+            const beatmapPP = await IntermediateOsuApiService.getBeatmapPP(beatmapId, beatmapStructure);
+            this.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
             const deepLastDiffData = await OsuApi.getBeatmapData(beatmapId);
             const beatmapDeepParams = callback(deepLastDiffData);
             this.displayTooltip(beatmapDeepParams, beatmapId, beatmapBlock);
         } catch (error) {
             log(`Error fetching beatmap data: ${error.message}`, 'dev', 'error');
         }
+    }
+
+    mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
+        const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
+        const roundedPP = Math.ceil(beatmapPP); // округляем в большую сторону
+        beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
     }
 
     /**

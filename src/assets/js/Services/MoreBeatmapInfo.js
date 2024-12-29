@@ -55,6 +55,9 @@ class MoreBeatmapInfo {
             });
             const mapDiffInfoString = this.createMapParamsString(lastDiffData);
             this.insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId);
+            //const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(lastDiffData.id);
+            //const beatmapPP = await IntermediateOsuApiService.getBeatmapPP(lastDiffData.id, beatmapStructure);
+            //this.mountPPForBeatmapBlock(element, beatmapPP);
         });
     }
 
@@ -125,9 +128,6 @@ class MoreBeatmapInfo {
      */
 
     async handleChangeInfoDiffClick(beatmapId) {
-        const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(beatmapId);
-        await IntermediateOsuApiService.getBeatmapPP(beatmapId, beatmapStructure);
-
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
         if (isNaN(numericBeatmapId)) return;
 

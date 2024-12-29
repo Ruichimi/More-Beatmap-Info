@@ -302,9 +302,11 @@ class IntermediateOsuApiService {
                 beatmap: beatmapStructure,
             });
             log(`${response.data.pp}`, 'dev'); //also has ppAim, ppSpeed, ppAccuracy
+            return response.data.pp;
         } catch (error) {
             log(`Failed to get beatmap pp:\n ${error}`, 'prod', 'error');
         }
+        return null;
     }
 
     async getBeatmapStructureAsText(beatmapId) {
