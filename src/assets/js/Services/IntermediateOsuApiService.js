@@ -295,6 +295,33 @@ class IntermediateOsuApiService {
         }
         return null;
     }
+
+    async getBeatmapPP(beatmapId, beatmapStructure) {
+        try {
+            const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
+                beatmap: beatmapStructure,
+            });
+            log(`${response.data.pp}`, 'dev'); //also has ppAim, ppSpeed, ppAccuracy
+        } catch (error) {
+            log(`Failed to get beatmap pp:\n ${error}`, 'prod', 'error');
+        }
+    }
+
+    async getBeatmapStructureAsText(beatmapId) {
+        try {
+            const response = await axios.get(`https://osu.ppy.sh/osu/${beatmapId}`, {
+                responseType: 'text',
+            });
+            const beatmapStructure = response.data;
+            if (beatmapStructure.length < 50 || typeof beatmapStructure !== 'string') {
+                log(`Something went wrong, with beatmap structure: ${beatmapStructure.length}`, 'dev');
+            }
+            return beatmapStructure;
+        } catch (error) {
+            log(`Failed to get pp for beatmap: ${beatmapId}\n, ${error}`, 'prod', 'error');
+        }
+    }
+
 }
 
 export default new IntermediateOsuApiService();

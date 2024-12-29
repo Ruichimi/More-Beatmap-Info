@@ -2,7 +2,6 @@ import OsuApi from './IntermediateOsuApiService';
 import DomHelper from "./DomHelper";
 import log from "/logger";
 import IntermediateOsuApiService from "./IntermediateOsuApiService";
-import axios from "axios";
 
 //TODO: Оптимизировать обращения к DOM
 
@@ -126,26 +125,9 @@ class MoreBeatmapInfo {
      */
 
     async handleChangeInfoDiffClick(beatmapId) {
-        axios.get(`https://osu.ppy.sh/osu/${beatmapId}`, {
-            responseType: 'text',
-        })
-            .then(response => {
-                const mapContent = response.data;
-                const map = this.fetchBeatmapPP(beatmapId, mapContent);
-                console.log(map);
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-            });
-        // async function fetchBeatmapPP(beatmapId) {
-        //     try {
-        //         const response = await axios.get(`http://localhost:3000/api/BeatmapPP/${beatmapId}`);
-        //         console.log('Данные от API:', response.data);
-        //     } catch (error) {
-        //         console.error('Ошибка при обращении к API:', error.response ? error.response.data : error.message);
-        //     }
-        // }
-        // await fetchBeatmapPP(beatmapId);
+        const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(beatmapId);
+        await IntermediateOsuApiService.getBeatmapPP(beatmapId, beatmapStructure);
+
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
         if (isNaN(numericBeatmapId)) return;
 
@@ -211,18 +193,6 @@ class MoreBeatmapInfo {
     reloadExtensionEvent() {
         const event = new CustomEvent('reloadExtensionRequested');
         window.dispatchEvent(event);
-    }
-
-    async fetchBeatmapPP(beatmapId, beatmap) {
-        try {
-            const response = await axios.post(`http://localhost:3000/api/BeatmapPP/${beatmapId}`, {
-                beatmap: beatmap, // Данные для отправки
-            });
-
-            console.log('Данные с сервера:', response.data);
-        } catch (error) {
-            console.error('Ошибка при запросе данных:', error);
-        }
     }
 }
 
