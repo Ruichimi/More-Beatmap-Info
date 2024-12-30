@@ -1,6 +1,5 @@
 import log from "/logger.js"
 import OsuApi from "./IntermediateOsuApiService";
-import IntermediateOsuApiService from "./IntermediateOsuApiService";
 
 //TODO: Пофиксить ошибку при попытке получить полную информацию о грейвярд карте
 
@@ -102,8 +101,7 @@ class DomHelper {
             return;
         }
         try {
-            const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(beatmapId);
-            const beatmapPP = await IntermediateOsuApiService.getBeatmapPP(beatmapId, beatmapStructure);
+            const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
             this.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
             const deepLastDiffData = await OsuApi.getBeatmapData(beatmapId);
             const beatmapDeepParams = callback(deepLastDiffData);
@@ -113,7 +111,7 @@ class DomHelper {
         }
     }
 
-    mountGetPPButton(beatmapBlock, beatmapId) {
+    mountPPButton(beatmapBlock, beatmapId, callback) {
         const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
         const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
         const getPPBtn = beatmapNameBlock.querySelector('.beatmap-get-pp-btn');
@@ -123,22 +121,27 @@ class DomHelper {
             getPPBtn.innerHTML = 'Get PP';
             getPPBtn.setAttribute('beatmapId', beatmapId);
             beatmapNameBlock.appendChild(getPPBtn);
+            getPPBtn.addEventListener('click', async () => {
+                try {
+                    await callback(beatmapBlock);
+                } catch (error) {
+                    console.error('Error while executing callback:', error);
+                }
+            });
         }
     }
 
     mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
         const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
         const getPPBtn = beatmapNameBlock.querySelector('.beatmap-pp-btn');
-        const roundedPP = Math.ceil(beatmapPP);
+        const roundedPP = Math.round(beatmapPP);
         const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
 
         if (ppBlock) {
             ppBlock.innerHTML = `${roundedPP}pp <span class="beatmap-pp">(100%fc)</span>`;
         } else {
-            if (getPPBtn) {
-                getPPBtn.remove();
-                beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
-            }
+            if (getPPBtn) getPPBtn.remove();
+            beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
         }
     }
 

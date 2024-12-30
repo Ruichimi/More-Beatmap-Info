@@ -39,7 +39,8 @@
     display: flex;
     font-size: 15px;
     align-items: center;
-    z-index: 100000 !important;
+    z-index: 100;
+    pointer-events: auto;
 }
 
 .beatmap-pp {

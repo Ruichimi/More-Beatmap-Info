@@ -41,23 +41,40 @@ class MoreBeatmapInfo {
         });
     }
 
-    setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
+    async setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
+        for (const beatmapBlock of beatmapsBlocks) {
+            try {
+                const mapsetId = this.getMapsetId(beatmapBlock);
+                const mapsetData = await OsuApi.getMapsetData(mapsetId);
+                const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+                beatmapBlock.setAttribute('mapsetId', mapsetId);
+                beatmapBlock.setAttribute('beatmapId', lastDiffData.id);
+                log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
+                DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
+                    return this.createBeatmapDifficultyParamsString(deepLastDiffData);
+                });
 
-        beatmapsBlocks.map(async (element) => {
-            const mapsetId = this.getMapsetId(element);
-            const mapsetData = await OsuApi.getMapsetData(mapsetId);
-            const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-            element.setAttribute('mapsetId', mapsetId);
-            element.setAttribute('beatmapId', lastDiffData.id);
-            log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
-            DomHelper.addDeepInfoButtonToBeatmap(element, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
-                return this.createBeatmapDifficultyParamsString(deepLastDiffData);
+                const mapDiffInfoString = this.createMapParamsString(lastDiffData);
+                this.insertInfoToBeatmapBlock(beatmapBlock, mapDiffInfoString, mapsetId);
+                this.setBeatmapPPReceivingToBlock(beatmapBlock, lastDiffData.id);
+            } catch (error) {
+                log(`Произошла ошибка при обработке beatmapBlock: ${error}`, 'prod', 'error');
+            }
+        }
+    }
+
+
+    setBeatmapPPReceivingToBlock(beatmapBlock, beatmapId) {
+        const cachedBeatmapPP = IntermediateOsuApiService.getBeatmapPPFromCache(beatmapId);
+        if (cachedBeatmapPP) {
+            domHelper.mountPPForBeatmapBlock(beatmapBlock, cachedBeatmapPP.pp);
+        } else {
+            domHelper.mountPPButton(beatmapBlock, beatmapId, async (beatmapBlock) => {
+                const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
+                domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP)
             });
-            const mapDiffInfoString = this.createMapParamsString(lastDiffData);
-            this.insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId);
-            domHelper.mountGetPPButton(element, lastDiffData.id)
-        });
+        }
     }
 
     createBeatmapDifficultyParamsString(beatmapData) {

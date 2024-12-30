@@ -297,12 +297,13 @@ class IntermediateOsuApiService {
         return null;
     }
 
-    async getBeatmapPP(beatmapId, beatmapStructure) {
+    async getBeatmapPP(beatmapId) {
         const cachedBeatmapPP = this.getBeatmapPPFromCache(beatmapId);
         if (cachedBeatmapPP) {
             log('PP data recived from cache', 'dev');
             return cachedBeatmapPP.pp;
         } else {
+            const beatmapStructure = await this.getBeatmapStructureAsText(beatmapId);
             try {
                 const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
                     beatmap: beatmapStructure,
