@@ -5,6 +5,34 @@
     margin-bottom: 6px;
 }
 
+.beatmapset-panel__info-row--title {
+    height: 23px !important;
+}
+
+.beatmap-pp-btn {
+    z-index: 100;
+    pointer-events: auto;
+    white-space: nowrap;
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    margin-bottom: 3px;
+}
+
+.beatmap-pp-btn:hover {
+    background-color: rgb(110, 103, 103);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.beatmapset-badge--featured_artist {
+    position: relative;
+    top: 6px;
+}
+
 .beatmap-pp-block {
     position: relative;
     white-space: nowrap;
@@ -15,6 +43,7 @@
 }
 
 .beatmap-pp {
+    display: none;
     position: relative;
     top: 2px;
     left: 3px;
@@ -30,7 +59,9 @@
     --panel-height: 115px;
 }
 .more-diff-info-btn {
-    background: gray;
+    color: #711fff;
+    /*background: gray;*/
+    background: 0;
     border-radius: 100%;
     border: none;
     height: 20px;

@@ -18,6 +18,7 @@ class IntermediateOsuApiService {
         this.localStorageBeatmapDeepInfoKey = "beatmapsDeepInfoCache";
         this.localStorageBeatmapDeepInfoItemKey = "beatmap";
         this.localStorageBeatmapsAmountKey = "beatmapsCount";
+        this.localStoragePPKey = "beatmapsPPCache";
         this.mapsetsCacheLimit = 600;
         this.mapsetsCacheClearItems = 300;
         this.beatmapsCacheLimit = 50;
@@ -297,14 +298,27 @@ class IntermediateOsuApiService {
     }
 
     async getBeatmapPP(beatmapId, beatmapStructure) {
-        try {
-            const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
-                beatmap: beatmapStructure,
-            });
-            log(`${response.data.pp}`, 'dev'); //also has ppAim, ppSpeed, ppAccuracy
-            return response.data.pp;
-        } catch (error) {
-            log(`Failed to get beatmap pp:\n ${error}`, 'prod', 'error');
+        const cachedBeatmapPP = this.getBeatmapPPFromCache(beatmapId);
+        if (cachedBeatmapPP) {
+            log('PP data recived from cache', 'dev');
+            return cachedBeatmapPP.pp;
+        } else {
+            try {
+                const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
+                    beatmap: beatmapStructure,
+                });
+                log(`${response.data.pp}`, 'dev'); //also has ppAim, ppSpeed, ppAccuracy
+                const paramsToCache = {
+                    pp: parseFloat(response.data.pp.toFixed(2)),
+                    ppAim: parseFloat(response.data.ppAim.toFixed(2)),
+                    ppSpeed: parseFloat(response.data.ppSpeed.toFixed(2)),
+                    ppAccuracy: parseFloat(response.data.ppAccuracy.toFixed(2))
+                };
+                this.cacheBeatmapPP(paramsToCache, beatmapId);
+                return response.data.pp;
+            } catch (error) {
+                log(`Failed to get beatmap pp:\n ${error}`, 'prod', 'error');
+            }
         }
         return null;
     }
@@ -324,6 +338,38 @@ class IntermediateOsuApiService {
         }
     }
 
+    cacheBeatmapPP(cacheData, beatmapId) {
+        log(cacheData, 'dev');
+        try {
+            const cache = JSON.parse(localStorage.getItem('beatmapsPPCache')) || {};
+            const cacheKey = `beatmap_${beatmapId}`;
+
+            cache[cacheKey] = JSON.stringify(cacheData);
+
+            localStorage.setItem(this.localStoragePPKey, JSON.stringify(cache));
+
+            log(`Cached data for ${beatmapId}`, 'dev');
+        } catch (error) {
+            log(`Failed to cache beatmap pp:\n ${error}`, 'dev', 'error');
+        }
+    }
+
+    getBeatmapPPFromCache(beatmapId) {
+        try {
+            const cache = JSON.parse(localStorage.getItem('beatmapsPPCache')) || {};
+            const cacheKey = `beatmap_${beatmapId}`;
+
+            if (cache[cacheKey]) {
+                return JSON.parse(cache[cacheKey]);
+            } else {
+                log(`No cached data found for ${beatmapId}`, 'dev');
+                return null;
+            }
+        } catch (error) {
+            log(`Failed to retrieve cached beatmap pp:\n ${error}`, 'dev', 'error');
+            return null;
+        }
+    }
 }
 
 export default new IntermediateOsuApiService();

@@ -2,6 +2,7 @@ import OsuApi from './IntermediateOsuApiService';
 import DomHelper from "./DomHelper";
 import log from "/logger";
 import IntermediateOsuApiService from "./IntermediateOsuApiService";
+import domHelper from "./DomHelper";
 
 //TODO: Оптимизировать обращения к DOM
 
@@ -20,7 +21,7 @@ class MoreBeatmapInfo {
                 this.domObserver.startObserving(
                     '.beatmapsets__items',
                     (addedNodes) => this.setLastDiffInfoToMapsRows(addedNodes),
-                    { childList: true, subtree: true }
+                    { childList: true, subtree: false }
                 );
 
                 this.domObserver.observeDynamicElement(
@@ -55,9 +56,7 @@ class MoreBeatmapInfo {
             });
             const mapDiffInfoString = this.createMapParamsString(lastDiffData);
             this.insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId);
-            //const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(lastDiffData.id);
-            //const beatmapPP = await IntermediateOsuApiService.getBeatmapPP(lastDiffData.id, beatmapStructure);
-            //this.mountPPForBeatmapBlock(element, beatmapPP);
+            domHelper.mountGetPPButton(element, lastDiffData.id)
         });
     }
 
@@ -76,6 +75,7 @@ class MoreBeatmapInfo {
     }
 
     flattenBeatmapRows(beatmapsBlocksRows) {
+        log(beatmapsBlocksRows, 'debug');
         return Array.from(beatmapsBlocksRows)
             .flatMap(row => Array.from(row.querySelectorAll('.beatmapsets__item')))
             .flat();

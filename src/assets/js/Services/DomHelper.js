@@ -76,7 +76,9 @@ class DomHelper {
             const beatmapBlockRightMenu = beatmapBlock.querySelector('.beatmapset-panel__menu');
             const moreDiffInfoBtn = document.createElement('button');
             moreDiffInfoBtn.classList.add('more-diff-info-btn');
-            moreDiffInfoBtn.innerText = '...';
+            moreDiffInfoBtn.innerHTML = '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">\n' +
+                '  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>\n' +
+                '</svg>';
             moreDiffInfoBtn.addEventListener('click', async () => {
                 await this.showDeepBeatmapData(beatmapBlock, callback);
             });
@@ -99,7 +101,6 @@ class DomHelper {
             existingTooltip.remove();
             return;
         }
-
         try {
             const beatmapStructure = await IntermediateOsuApiService.getBeatmapStructureAsText(beatmapId);
             const beatmapPP = await IntermediateOsuApiService.getBeatmapPP(beatmapId, beatmapStructure);
@@ -112,11 +113,35 @@ class DomHelper {
         }
     }
 
+    mountGetPPButton(beatmapBlock, beatmapId) {
+        const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
+        const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
+        const getPPBtn = beatmapNameBlock.querySelector('.beatmap-get-pp-btn');
+        if (!getPPBtn && !ppBlock) {
+            const getPPBtn = document.createElement('button');
+            getPPBtn.classList.add('beatmap-pp-btn');
+            getPPBtn.innerHTML = 'Get PP';
+            getPPBtn.setAttribute('beatmapId', beatmapId);
+            beatmapNameBlock.appendChild(getPPBtn);
+        }
+    }
+
     mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
         const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
-        const roundedPP = Math.ceil(beatmapPP); // округляем в большую сторону
-        beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
+        const getPPBtn = beatmapNameBlock.querySelector('.beatmap-pp-btn');
+        const roundedPP = Math.ceil(beatmapPP);
+        const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
+
+        if (ppBlock) {
+            ppBlock.innerHTML = `${roundedPP}pp <span class="beatmap-pp">(100%fc)</span>`;
+        } else {
+            if (getPPBtn) {
+                getPPBtn.remove();
+                beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
+            }
+        }
     }
+
 
     /**
      * Creates an HTML element for the tooltip with detailed beatmap data and appends it to the DOM.
