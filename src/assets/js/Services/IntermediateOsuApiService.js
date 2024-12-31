@@ -23,6 +23,8 @@ class IntermediateOsuApiService {
         this.mapsetsCacheClearItems = 300;
         this.beatmapsCacheLimit = 50;
         this.beatmapsCacheClearItems = 40;
+        this.beatmapsPPCacheLimit = 200;
+        this.beatmapsPPCacheClearItems = 200;
     }
 
     /**
@@ -198,7 +200,6 @@ class IntermediateOsuApiService {
             };
         });
         storageArrayWithNames.sort((a, b) => new Date(a.date) - new Date(b.date));
-
         return storageArrayWithNames.slice(0, count);
     }
 
@@ -219,6 +220,7 @@ class IntermediateOsuApiService {
         });
 
         localStorage.setItem(key, JSON.stringify(storageData));
+        log(`Clear ${count} items from ${key}`, 'dev');
     }
 
     /**
@@ -340,20 +342,29 @@ class IntermediateOsuApiService {
     }
 
     cacheBeatmapPP(cacheData, beatmapId) {
+        const cache = JSON.parse(localStorage.getItem(this.localStoragePPKey));
+        if (cache) {
+            const numberOfItems = Object.keys(cache).length;
+            if (numberOfItems >= this.beatmapsPPCacheLimit) {
+                this.removeOldestItemsFromCache(this.localStoragePPKey, this.beatmapsPPCacheClearItems);
+            }
+        }
         log(cacheData, 'dev');
         try {
             const cache = JSON.parse(localStorage.getItem('beatmapsPPCache')) || {};
             const cacheKey = `beatmap_${beatmapId}`;
-
+            cacheData.date = new Date().toISOString();
             cache[cacheKey] = JSON.stringify(cacheData);
-
             localStorage.setItem(this.localStoragePPKey, JSON.stringify(cache));
-
             log(`Cached data for ${beatmapId}`, 'dev');
         } catch (error) {
             log(`Failed to cache beatmap pp:\n ${error}`, 'dev', 'error');
         }
     }
+
+    // clearBeatmapsPPCacheIfNeeded() {
+    //
+    // }
 
     getBeatmapPPFromCache(beatmapId) {
         try {
@@ -363,7 +374,7 @@ class IntermediateOsuApiService {
             if (cache[cacheKey]) {
                 return JSON.parse(cache[cacheKey]);
             } else {
-                log(`No cached data found for ${beatmapId}`, 'dev');
+                log(`No cached data found for ${beatmapId}`, 'full');
                 return null;
             }
         } catch (error) {

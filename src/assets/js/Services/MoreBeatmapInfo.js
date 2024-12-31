@@ -68,11 +68,11 @@ class MoreBeatmapInfo {
     setBeatmapPPReceivingToBlock(beatmapBlock, beatmapId) {
         const cachedBeatmapPP = IntermediateOsuApiService.getBeatmapPPFromCache(beatmapId);
         if (cachedBeatmapPP) {
-            domHelper.mountPPForBeatmapBlock(beatmapBlock, cachedBeatmapPP.pp);
+            domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, cachedBeatmapPP.pp);
         } else {
             domHelper.mountPPButton(beatmapBlock, beatmapId, async (beatmapBlock) => {
                 const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
-                domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP)
+                domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP)
             });
         }
     }
@@ -146,8 +146,8 @@ class MoreBeatmapInfo {
 
     async handleChangeInfoDiffClick(beatmapId) {
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
-        if (isNaN(numericBeatmapId)) return;
 
+        if (isNaN(numericBeatmapId)) return;
         if (this.isInfoAlreadyDisplayed(beatmapId)) return;
 
         const beatmapInfo = this.getBeatmapInfoFromCache(numericBeatmapId);
@@ -155,9 +155,18 @@ class MoreBeatmapInfo {
             this.handleMissingBeatmapInfo(numericBeatmapId);
             return;
         }
-
+        this.updatePPBlockForNewBeatmapId(beatmapInfo.mapsetId, beatmapId);
         this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
         DomHelper.updateMapIdBtn(beatmapId, beatmapInfo.mapsetId);
+    }
+
+    async updatePPBlockForNewBeatmapId(mapsetId, beatmapId) {
+        const beatmapBlock = DomHelper.getBeatmapBlockByMapsetId(mapsetId);
+        const isDisplayedCurrentPP = DomHelper.isCurrentPPDisplayedForBeatmapId(beatmapBlock, beatmapId);
+        if (!isDisplayedCurrentPP) {
+            const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
+            DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
+        }
     }
 
     convertToNumericBeatmapId(beatmapId) {

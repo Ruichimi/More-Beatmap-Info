@@ -102,7 +102,7 @@ class DomHelper {
         }
         try {
             const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
-            this.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
+            this.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
             const deepLastDiffData = await OsuApi.getBeatmapData(beatmapId);
             const beatmapDeepParams = callback(deepLastDiffData);
             this.displayTooltip(beatmapDeepParams, beatmapId, beatmapBlock);
@@ -131,7 +131,7 @@ class DomHelper {
         }
     }
 
-    mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
+    mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP) {
         const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
         const getPPBtn = beatmapNameBlock.querySelector('.beatmap-pp-btn');
         const roundedPP = Math.round(beatmapPP);
@@ -141,7 +141,7 @@ class DomHelper {
             ppBlock.innerHTML = `${roundedPP}pp <span class="beatmap-pp">(100%fc)</span>`;
         } else {
             if (getPPBtn) getPPBtn.remove();
-            beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
+            beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block" beatmapId="${beatmapId}">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
         }
     }
 
@@ -223,6 +223,16 @@ class DomHelper {
             biffNameAsLink.innerHTML = diffNameBlock.innerHTML;
             diffNameBlock.parentNode.replaceChild(biffNameAsLink, diffNameBlock);
         }
+    }
+
+    isCurrentPPDisplayedForBeatmapId(beatmapBlock, beatmapId) {
+        const ppBlock = beatmapBlock.querySelector('.beatmap-pp-block');
+        const currentBeatmapPPDisplayed = ppBlock.getAttribute('beatmapId');
+        return currentBeatmapPPDisplayed === beatmapId;
+    }
+
+    getBeatmapBlockByMapsetId(mapsetId) {
+        return document.querySelector(`.beatmapsets__item[mapsetId="${mapsetId}"]`);
     }
 }
 
