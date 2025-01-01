@@ -21,7 +21,7 @@ class MoreBeatmapInfo {
                 this.domObserver.startObserving(
                     '.beatmapsets__items',
                     (addedNodes) => this.setLastDiffInfoToMapsRows(addedNodes),
-                    { childList: true, subtree: false }
+                    {childList: true, subtree: false}
                 );
 
                 this.domObserver.observeDynamicElement(
@@ -48,12 +48,16 @@ class MoreBeatmapInfo {
                 const mapsetId = this.getMapsetId(beatmapBlock);
                 const mapsetData = await OsuApi.getMapsetData(mapsetId);
                 const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+
                 beatmapBlock.setAttribute('mapsetId', mapsetId);
                 beatmapBlock.setAttribute('beatmapId', lastDiffData.id);
                 log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
-                DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, lastDiffData.id, lastDiffData.mode, (deepLastDiffData) => {
-                    return this.createBeatmapDifficultyParamsString(deepLastDiffData);
-                });
+
+                if (lastDiffData.mode === 'osu') {
+                    DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, (beatmapBlock) => {
+                        this.handleDeepInfoBtnClick(beatmapBlock);
+                    });
+                }
 
                 const mapDiffInfoString = this.createMapParamsString(lastDiffData);
                 this.insertInfoToBeatmapBlock(beatmapBlock, mapDiffInfoString, mapsetId);
@@ -64,8 +68,30 @@ class MoreBeatmapInfo {
         }
     }
 
+    async handleDeepInfoBtnClick(beatmapBlock) {
+        log(`Handling deep info button for block: ${beatmapBlock}`, 'debug');
+        const beatmapId = beatmapBlock.getAttribute('beatmapId');
+        log(`Deep beatmapData initialized for: ${beatmapId}`, 'debug');
+        const existingDeepInfoTooltip = DomHelper.getExistingDeepInfoTooltip(beatmapId);
+        if (existingDeepInfoTooltip) {
+            existingDeepInfoTooltip.remove();
+        } else {
+            try {
+                const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
+                DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
+                const deepLastDiffData = await OsuApi.getBeatmapData(beatmapId);
+                const deepLastDiffDataAsString = this.createBeatmapDifficultyParamsString(deepLastDiffData);
+                DomHelper.displayTooltip(deepLastDiffDataAsString, beatmapId, beatmapBlock);
+            } catch (error) {
+                log(`Error fetching beatmap data: ${error.message}`, 'dev', 'error');
+            }
+        }
+    }
 
     setBeatmapPPReceivingToBlock(beatmapBlock, beatmapId) {
+        if (beatmapBlock.querySelector('.beatmap-pp-btn') || beatmapBlock.querySelector('.beatmap-pp-block')) {
+            return;
+        }
         const cachedBeatmapPP = IntermediateOsuApiService.getBeatmapPPFromCache(beatmapId);
         if (cachedBeatmapPP) {
             domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, cachedBeatmapPP.pp);
@@ -145,28 +171,25 @@ class MoreBeatmapInfo {
      */
 
     async handleChangeInfoDiffClick(beatmapId) {
+        if (this.isBeatmapInfoAlreadyDisplayed(beatmapId)) return;
+
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
-
-        if (isNaN(numericBeatmapId)) return;
-        if (this.isInfoAlreadyDisplayed(beatmapId)) return;
-
         const beatmapInfo = this.getBeatmapInfoFromCache(numericBeatmapId);
         if (!beatmapInfo) {
             this.handleMissingBeatmapInfo(numericBeatmapId);
             return;
         }
-        this.updatePPBlockForNewBeatmapId(beatmapInfo.mapsetId, beatmapId);
+
         this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapInfo.mapsetId);
-        DomHelper.updateMapIdBtn(beatmapId, beatmapInfo.mapsetId);
+        await this.updatePPBlockForNewBeatmapId(beatmapInfo.mapsetId, beatmapId);
+        DomHelper.updateBeatmapIdBtn(beatmapId, beatmapInfo.mapsetId);
     }
 
     async updatePPBlockForNewBeatmapId(mapsetId, beatmapId) {
-        const beatmapBlock = DomHelper.getBeatmapBlockByMapsetId(mapsetId);
-        const isDisplayedCurrentPP = DomHelper.isCurrentPPDisplayedForBeatmapId(beatmapBlock, beatmapId);
-        if (!isDisplayedCurrentPP) {
-            const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
-            DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
-        }
+        console.log(`updating PP for beatmap set: ${mapsetId} to beatmap: ${beatmapId}`);
+        const beatmapBlock = DomHelper.getMapsetBlockById(mapsetId);
+        const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
+        DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
     }
 
     convertToNumericBeatmapId(beatmapId) {
@@ -177,9 +200,9 @@ class MoreBeatmapInfo {
         return numericBeatmapId;
     }
 
-    isInfoAlreadyDisplayed(beatmapId) {
-        const existingDisplayingInfo = document.querySelector(`[beatmapId="${beatmapId}"]`);
-        if (existingDisplayingInfo) {
+    isBeatmapInfoAlreadyDisplayed(beatmapId) {
+        const mapsetBlock = DomHelper.getMapsetBlockByCurrentDiffDisplayed(beatmapId);
+        if (mapsetBlock) {
             log('A block already contains current info', 'dev');
             return true;
         }
@@ -199,7 +222,7 @@ class MoreBeatmapInfo {
             if (retryBeatmapInfo) {
                 log(retryBeatmapInfo, 'debug');
                 this.updateBeatmapInfoDOM(retryBeatmapInfo.map, retryBeatmapInfo.mapsetId);
-                DomHelper.updateMapIdBtn(numericBeatmapId, retryBeatmapInfo.mapsetId);
+                DomHelper.updateBeatmapIdBtn(numericBeatmapId, retryBeatmapInfo.mapsetId);
             } else {
                 log('Unable to fetch beatmap info after reload in 1.3 sec\nProbably bad internet connection',
                     'dev', 'error');
