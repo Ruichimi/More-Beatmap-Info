@@ -1,8 +1,6 @@
 import OsuApi from './IntermediateOsuApiService';
 import DomHelper from "./DomHelper";
 import log from "/logger";
-import IntermediateOsuApiService from "./IntermediateOsuApiService";
-import domHelper from "./DomHelper";
 
 //TODO: Оптимизировать обращения к DOM
 
@@ -36,36 +34,36 @@ class MoreBeatmapInfo {
 
     processPopupGroupChanges(beatmapDiffsGroup) {
         log(beatmapDiffsGroup, 'dev');
-        DomHelper.addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroup, (beatmapId) => {
+        DomHelper.addChangeInfoButtonsToMapsetDiffsList(beatmapDiffsGroup, (beatmapId) => {
             this.handleChangeInfoDiffClick(beatmapId);
         });
     }
 
-    async setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
+    setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
-        for (const beatmapBlock of beatmapsBlocks) {
+        beatmapsBlocks.map(async (beatmapBlock) => {
             try {
-                const mapsetId = this.getMapsetId(beatmapBlock);
+                const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
                 const mapsetData = await OsuApi.getMapsetData(mapsetId);
                 const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
 
-                beatmapBlock.setAttribute('mapsetId', mapsetId);
-                beatmapBlock.setAttribute('beatmapId', lastDiffData.id);
-                log(`Информация о последней сложности:\n${JSON.stringify(lastDiffData, null, 2)}\n_____________`, 'debug');
-
-                if (lastDiffData.mode === 'osu') {
-                    DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, (beatmapBlock) => {
-                        this.handleDeepInfoBtnClick(beatmapBlock);
-                    });
-                }
-
-                const mapDiffInfoString = this.createMapParamsString(lastDiffData);
-                this.insertInfoToBeatmapBlock(beatmapBlock, mapDiffInfoString, mapsetId);
-                this.setBeatmapPPReceivingToBlock(beatmapBlock, lastDiffData.id);
+                this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
             } catch (error) {
-                log(`Произошла ошибка при обработке beatmapBlock: ${error}`, 'prod', 'error');
+                log(`Ошибка обработки beatmapBlock: ${error}`, 'prod', 'error');
             }
+        });
+    }
+
+    updateBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
+        beatmapBlock.setAttribute('mapsetId', mapsetId);
+        beatmapBlock.setAttribute('beatmapId', beatmapData.id);
+        const mapDiffInfoString = this.createBeatmapParamsAsString(beatmapData);
+
+        DomHelper.mountBeatmapInfoToBlock(beatmapBlock, mapsetId, mapDiffInfoString);
+        if (beatmapData.mode === 'osu') {
+            DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, (block) => this.handleDeepInfoBtnClick(block));
         }
+        this.setBeatmapPPReceivingToBlock(beatmapBlock, beatmapData.id);
     }
 
     async handleDeepInfoBtnClick(beatmapBlock) {
@@ -79,9 +77,9 @@ class MoreBeatmapInfo {
             try {
                 const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
                 DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
-                const deepLastDiffData = await OsuApi.getBeatmapData(beatmapId);
-                const deepLastDiffDataAsString = this.createBeatmapDifficultyParamsString(deepLastDiffData);
-                DomHelper.displayTooltip(deepLastDiffDataAsString, beatmapId, beatmapBlock);
+                const deepBeatmapData = await OsuApi.getBeatmapData(beatmapId);
+                const deepBeatmapDataAsString = this.createBeatmapDifficultyParamsString(deepBeatmapData);
+                DomHelper.displayTooltip(deepBeatmapDataAsString, beatmapId, beatmapBlock);
             } catch (error) {
                 log(`Error fetching beatmap data: ${error.message}`, 'dev', 'error');
             }
@@ -92,15 +90,19 @@ class MoreBeatmapInfo {
         if (beatmapBlock.querySelector('.beatmap-pp-btn') || beatmapBlock.querySelector('.beatmap-pp-block')) {
             return;
         }
-        const cachedBeatmapPP = IntermediateOsuApiService.getBeatmapPPFromCache(beatmapId);
+        const cachedBeatmapPP = OsuApi.getBeatmapPPFromCache(beatmapId);
         if (cachedBeatmapPP) {
-            domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, cachedBeatmapPP.pp);
+            DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, cachedBeatmapPP.pp);
         } else {
-            domHelper.mountPPButton(beatmapBlock, beatmapId, async (beatmapBlock) => {
-                const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
-                domHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP)
+            DomHelper.mountPPButton(beatmapBlock, beatmapId, (beatmapBlock) => {
+                this.handleGetPPBtnClick(beatmapBlock, beatmapId);
             });
         }
+    }
+
+    async handleGetPPBtnClick(beatmapBlock, beatmapId) {
+        const beatmapPP = await OsuApi.getBeatmapPP(beatmapId);
+        DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP);
     }
 
     createBeatmapDifficultyParamsString(beatmapData) {
@@ -124,31 +126,15 @@ class MoreBeatmapInfo {
             .flat();
     }
 
-    getMapsetId(element) {
-        const href = element.querySelector('a').getAttribute('href');
-        const match = href.match(/\/(\d+)$/);
-        return match ? match[1] : null;
-    }
-
-    createMapParamsString(lastDiffData) {
+    createBeatmapParamsAsString(beatmapData) {
         return `<div class="more-beatmap-info">
-        ${lastDiffData.difficulty_rating}★
-        bpm ${lastDiffData.bpm}
-        combo ${lastDiffData.max_combo}
-        od ${lastDiffData.accuracy}
-        ar ${lastDiffData.ar}
-        cs ${lastDiffData.cs}
-        hp ${lastDiffData.drain}`;
-    }
-
-    insertInfoToBeatmapBlock(element, mapDiffInfoString, mapsetId) {
-        const infoBlock = document.createElement('div');
-        infoBlock.classList.add('more-beatmap-info-block');
-        infoBlock.id = mapsetId;
-        const statsRow = element.querySelector('.beatmapset-panel__info-row--stats');
-        statsRow.parentNode.insertBefore(infoBlock, statsRow.nextSibling);
-        infoBlock.innerHTML = mapDiffInfoString;
-        return infoBlock;
+        ${beatmapData.difficulty_rating}★
+        bpm ${beatmapData.bpm}
+        combo ${beatmapData.max_combo}
+        od ${beatmapData.accuracy}
+        ar ${beatmapData.ar}
+        cs ${beatmapData.cs}
+        hp ${beatmapData.drain}`;
     }
 
     getLastMapsetDiffInfo(mapsetData) {
@@ -174,7 +160,7 @@ class MoreBeatmapInfo {
         if (this.isBeatmapInfoAlreadyDisplayed(beatmapId)) return;
 
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
-        const beatmapInfo = this.getBeatmapInfoFromCache(numericBeatmapId);
+        const beatmapInfo = OsuApi.getDiffInfoByIdFromCache(numericBeatmapId);
         if (!beatmapInfo) {
             this.handleMissingBeatmapInfo(numericBeatmapId);
             return;
@@ -209,16 +195,12 @@ class MoreBeatmapInfo {
         return false;
     }
 
-    getBeatmapInfoFromCache(numericBeatmapId) {
-        return IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
-    }
-
     handleMissingBeatmapInfo(numericBeatmapId) {
         log('Beatmap info not found, reloading extension...', 'dev');
         this.reloadExtensionEvent();
 
         setTimeout(() => {
-            const retryBeatmapInfo = IntermediateOsuApiService.getDiffInfoByIdFromCache(numericBeatmapId);
+            const retryBeatmapInfo = OsuApi.getDiffInfoByIdFromCache(numericBeatmapId);
             if (retryBeatmapInfo) {
                 log(retryBeatmapInfo, 'debug');
                 this.updateBeatmapInfoDOM(retryBeatmapInfo.map, retryBeatmapInfo.mapsetId);
@@ -231,7 +213,7 @@ class MoreBeatmapInfo {
     }
 
     updateBeatmapInfoDOM(beatmapInfo, mapsetId) {
-        const diffInfoString = this.createMapParamsString(beatmapInfo);
+        const diffInfoString = this.createBeatmapParamsAsString(beatmapInfo);
         const beatmapBlock = document.getElementById(mapsetId);
         log(beatmapBlock, 'debug');
         if (beatmapBlock) {

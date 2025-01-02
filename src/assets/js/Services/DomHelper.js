@@ -68,6 +68,22 @@ class DomHelper {
         });
     }
 
+    mountBeatmapInfoToBlock(beatmapBlock, mapsetId, beatmapInfoString) {
+        const infoBlock = document.createElement('div');
+        const statsRowBlock = beatmapBlock.querySelector('.beatmapset-panel__info-row--stats');
+        infoBlock.classList.add('more-beatmap-info-block');
+        infoBlock.id = mapsetId;
+        statsRowBlock.parentNode.insertBefore(infoBlock, statsRowBlock.nextSibling);
+        infoBlock.innerHTML = beatmapInfoString;
+        return infoBlock;
+    }
+
+    getMapsetIdFromBlock(beatmapBlock) {
+        const href = beatmapBlock.querySelector('a').getAttribute('href');
+        const match = href.match(/\/(\d+)$/);
+        return match ? match[1] : null;
+    }
+
     addDeepInfoButtonToBeatmap(beatmapBlock, callbackClick) {
         const beatmapBlockRightMenu = beatmapBlock.querySelector('.beatmapset-panel__menu');
         const moreDiffInfoBtn = this.createDeepInfoBtn();
@@ -95,7 +111,7 @@ class DomHelper {
     }
 
     updateBeatmapIdBtn(newBeatmapId, mapsetId) {
-        const beatmapBlock = document.querySelector(`[mapsetId="${mapsetId}"]`);
+        const beatmapBlock = this.getMapsetBlockById(mapsetId);
         beatmapBlock.setAttribute('beatmapId', newBeatmapId);
     }
 
@@ -104,15 +120,19 @@ class DomHelper {
         const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
         const getPPBtn = beatmapNameBlock.querySelector('.beatmap-get-pp-btn');
         if (!getPPBtn && !ppBlock) {
-            const getPPBtn = document.createElement('button');
-            getPPBtn.classList.add('beatmap-pp-btn');
-            getPPBtn.innerHTML = 'Get PP';
-            getPPBtn.setAttribute('beatmapId', beatmapId);
+            const getPPBtn = this.createPPBtn();
             beatmapNameBlock.appendChild(getPPBtn);
             getPPBtn.addEventListener('click', async () => {
                 callbackClick(beatmapBlock);
             });
         }
+    }
+
+    createPPBtn() {
+        const getPPBtn = document.createElement('button');
+        getPPBtn.classList.add('beatmap-pp-btn');
+        getPPBtn.innerHTML = 'Get PP';
+        return getPPBtn;
     }
 
     mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP) {
@@ -155,19 +175,19 @@ class DomHelper {
         }, 0);
     }
 
-    addChangeDiffInfoButtonsToDiffsList(beatmapDiffsGroupBlock, callback) {
-        const beatmapsetDiffsList = beatmapDiffsGroupBlock.querySelectorAll('.beatmaps-popup-item');
+    addChangeInfoButtonsToMapsetDiffsList(beatmapsetDiffsListBlock, callbackClick) {
+        const beatmapsetDiffsList = beatmapsetDiffsListBlock.querySelectorAll('.beatmaps-popup-item');
         const DiffsListDivs = this.convertLinksToDivsDOM(beatmapsetDiffsList);
         DiffsListDivs.forEach(diffItemDiv => {
             const beatmapId = diffItemDiv.getAttribute('href') ? diffItemDiv.getAttribute('href').split('/').pop() : 'Unknown';
             const beatmapListItem = diffItemDiv.querySelector('.beatmap-list-item');
             if (beatmapListItem) {
-                const changeDiffInfoBtn = this.createChangeDiffInfoButton(beatmapId);
+                const changeDiffInfoBtn = this.createChangeDiffInfoBtn(beatmapId);
                 beatmapListItem.appendChild(changeDiffInfoBtn);
                 this.convertDiffNameDivToLink(beatmapListItem, diffItemDiv);
 
                 changeDiffInfoBtn.addEventListener('click', () => {
-                    callback(beatmapId);
+                    callbackClick(beatmapId);
                 });
             } else {
                 log('Не верный элемент', 'dev', 'error');
@@ -175,7 +195,7 @@ class DomHelper {
         });
     }
 
-    createChangeDiffInfoButton(beatmapId) {
+    createChangeDiffInfoBtn(beatmapId) {
         const changeDiffInfoBtn = document.createElement('button');
         changeDiffInfoBtn.classList.add('change-diff-info-button');
         changeDiffInfoBtn.textContent = `(ID: ${beatmapId})`;
