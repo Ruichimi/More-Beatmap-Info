@@ -33,14 +33,21 @@
     top: 6px;
 }
 
-.beatmap-pp-block {
+.beatmap-pp-data {
+    display: none;
+}
+
+.pp-block {
     position: relative;
-    white-space: nowrap;
-    display: flex;
-    font-size: 15px;
-    align-items: center;
     z-index: 100;
     pointer-events: auto;
+}
+
+.pp {
+    white-space: nowrap;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
 }
 
 .beatmap-pp {

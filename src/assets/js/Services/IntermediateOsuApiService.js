@@ -299,31 +299,44 @@ class IntermediateOsuApiService {
         return null;
     }
 
-    async getBeatmapPP(beatmapId) {
+    async getBeatmapCalculatedData(beatmapId) {
         const cachedBeatmapPP = this.getBeatmapPPFromCache(beatmapId);
         if (cachedBeatmapPP) {
             log('PP data recived from cache', 'dev');
-            return cachedBeatmapPP.pp;
+            return cachedBeatmapPP;
         } else {
             const beatmapStructure = await this.getBeatmapStructureAsText(beatmapId);
             try {
                 const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
                     beatmap: beatmapStructure,
                 });
-                log(`${response.data.pp}`, 'dev'); //also has ppAim, ppSpeed, ppAccuracy
-                const paramsToCache = {
-                    pp: parseFloat(response.data.pp.toFixed(2)),
-                    ppAim: parseFloat(response.data.ppAim.toFixed(2)),
-                    ppSpeed: parseFloat(response.data.ppSpeed.toFixed(2)),
-                    ppAccuracy: parseFloat(response.data.ppAccuracy.toFixed(2))
-                };
-                this.cacheBeatmapPP(paramsToCache, beatmapId);
-                return response.data.pp;
+                console.log(response.data);
+                const filteredBeatmapCalcData = this.filterCalculatedBeatmapData(response.data);
+                this.cacheBeatmapPP(filteredBeatmapCalcData, beatmapId);
+                return filteredBeatmapCalcData;
             } catch (error) {
                 log(`Failed to get beatmap pp:\n ${error}`, 'prod', 'error');
             }
         }
         return null;
+    }
+
+    filterCalculatedBeatmapData(fullCalcObject) {
+        const filteredData = {
+            difficulty: {
+                aim: fullCalcObject.difficulty?.aim,
+                speed: fullCalcObject.difficulty?.speed,
+                nCircles: fullCalcObject.difficulty?.nCircles,
+                nSliders: fullCalcObject.difficulty?.nSliders,
+                speedNoteCount: fullCalcObject.difficulty?.speedNoteCount,
+                sliderFactor: fullCalcObject.difficulty?.sliderFactor,
+                flashlight: fullCalcObject.difficulty?.flashlight,
+            },
+            pp: fullCalcObject.pp,
+        };
+
+        log(filteredData, 'full');
+        return filteredData;
     }
 
     async getBeatmapStructureAsText(beatmapId) {

@@ -115,17 +115,15 @@ class DomHelper {
         beatmapBlock.setAttribute('beatmapId', newBeatmapId);
     }
 
-    mountPPButton(beatmapBlock, beatmapId, callbackClick) {
-        const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
-        const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
-        const getPPBtn = beatmapNameBlock.querySelector('.beatmap-get-pp-btn');
-        if (!getPPBtn && !ppBlock) {
-            const getPPBtn = this.createPPBtn();
-            beatmapNameBlock.appendChild(getPPBtn);
-            getPPBtn.addEventListener('click', async () => {
-                callbackClick(beatmapBlock);
-            });
-        }
+    mountPPButton(beatmapBlock, callbackClick) {
+        log('Mounting PP button', 'full');
+        const ppBlock = beatmapBlock.querySelector('.pp-block');
+        const getPPBtn = this.createPPBtn();
+        ppBlock.innerHTML = '';
+        ppBlock.appendChild(getPPBtn);
+        getPPBtn.addEventListener('click', async () => {
+            callbackClick(beatmapBlock);
+        });
     }
 
     createPPBtn() {
@@ -135,20 +133,13 @@ class DomHelper {
         return getPPBtn;
     }
 
-    mountPPForBeatmapBlock(beatmapBlock, beatmapId, beatmapPP) {
+    mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
+        const ppBlock = beatmapBlock.querySelector('.pp-block');
         const roundedPP = Math.round(beatmapPP);
-        const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;
-        const getPPBtn = beatmapNameBlock.querySelector('.beatmap-pp-btn');
-        const ppBlock = beatmapNameBlock.querySelector('.beatmap-pp-block');
-
-        if (ppBlock) {
-            ppBlock.innerHTML = `${roundedPP}pp <span class="beatmap-pp">(100%fc)</span>`;
-        } else {
-            if (getPPBtn) getPPBtn.remove();
-            beatmapNameBlock.innerHTML += `<div class="beatmap-pp-block" beatmapId="${beatmapId}">${roundedPP}pp <span class="beatmap-pp">(100%fc)</span></div>`;
-        }
+        ppBlock.innerHTML = '';
+        ppBlock.innerHTML += `${roundedPP}pp
+                              <span class="beatmap-pp-data">(100%fc)</span>`;
     }
-
 
     /**
      * Creates an HTML element for the tooltip with detailed beatmap data and appends it to the DOM.
