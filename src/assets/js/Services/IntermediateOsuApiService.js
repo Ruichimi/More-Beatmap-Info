@@ -6,7 +6,8 @@ import log from "/logger";
  * The class isolates API interactions and manages data caching internally.
  * Main methods:
  * - getMapsetData(mapsetId): Fetches mapset data by its ID, using cache or requesting from the API if not cached.
- * - getBeatmapData(beatmapId): Fetches full beatmap data by its ID, using cache or requesting from the API if not cached.
+ * - getCalculatedBeatmapData(beatmapId): Fetches full beatmap data with PP by its ID,
+ *   using cache or requesting from the API if not cached.
  */
 
 class IntermediateOsuApiService {
@@ -15,20 +16,17 @@ class IntermediateOsuApiService {
         //cache settings
         this.localStorageMapsetsKey = "beatmapsetsCache";
         this.localStorageMapsetsItemKey = "beatmapset";
-        this.localStorageBeatmapDeepInfoKey = "beatmapsDeepInfoCache";
-        this.localStorageBeatmapDeepInfoItemKey = "beatmap";
+        this.localStorageBeatmapsKey = "beatmapsCache";
+        this.localStorageBeatmapsItemKey = "beatmap";
         this.localStorageBeatmapsAmountKey = "beatmapsCount";
-        this.localStoragePPKey = "beatmapsPPCache";
         this.mapsetsCacheLimit = 600;
         this.mapsetsCacheClearItems = 300;
-        this.beatmapsCacheLimit = 50;
-        this.beatmapsCacheClearItems = 40;
         this.beatmapsPPCacheLimit = 200;
         this.beatmapsPPCacheClearItems = 200;
     }
 
     /**
-     * Retrieves and caches mapset data by its unique ID.
+     * Retrieves and caches filtered mapset data.
      * If the mapset data is already cached, it is returned from the cache.
      * Otherwise, it fetches the data from the intermediate server and caches it for future use.
      *
@@ -38,57 +36,108 @@ class IntermediateOsuApiService {
     async getMapsetData(mapsetId) {
         const beatmapsetDataFromCache = this.getDataFromCacheById(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey);
         if (beatmapsetDataFromCache) {
-            log('Данные мапсета получены из кеша', 'debug');
+            log('Mapset data received from the cache', 'debug');
             return beatmapsetDataFromCache;
         }
+
+        const beatmapsetDataFiltered = await this.getFilteredBeatmapsetData(mapsetId);
+        this.clearBeatmapsetsCacheIfNeeded();
+        this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetDataFiltered);
+        this.incrementBeatmapsAmountsCache();
+        return beatmapsetDataFiltered;
+    }
+
+    /**
+     * Fetches beatmapset data from server and filter it, leaving only the required fields.
+     *
+     * @param {string} mapsetId - The unique identifier of the mapset.
+     * @returns {Promise<Object>} - The filtered mapset data.
+     */
+    async getFilteredBeatmapsetData(mapsetId) {
+        const beatmapsetBeatmapRequiredFields = ["difficulty_rating", "bpm", "max_combo", "accuracy",
+            "ar", "cs", "drain", "mode", "id"];
+
         try {
             const response = await axios.get(`${this.serverUrl}/api/MapsetData/${mapsetId}`);
-            const beatmapsetBeatmapRequiredFields = ["difficulty_rating", "bpm", "max_combo", "accuracy", "ar", "cs", "drain", "mode", "id"];
             const dateForCache = this.getDateForCache(response.data);
             const beatmaps = response.data.beatmaps.map((beatmap) =>
                 this.filterObject(beatmap, beatmapsetBeatmapRequiredFields)
             );
-            const beatmapsetDataFiltered = {...this.filterObject(response.data, ['bpm']), beatmaps};
-            const beatmapsetFilteredWithDate = this.addDateToObject(beatmapsetDataFiltered, dateForCache);
-            this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetFilteredWithDate);
-            //console.log(beatmapsetDataFiltered);
-            this.incrementBeatmapsAmountsCache();
-            this.clearBeatmapsetsCacheIfNeeded();
+            let beatmapsetDataFiltered = {...this.filterObject(response.data, ['bpm']), beatmaps};
+            beatmapsetDataFiltered.date = dateForCache;
             return beatmapsetDataFiltered;
         } catch (error) {
-            log(`Ошибка: ${error}`, 'dev', 'error');
-            throw new Error(`Не удалось получить данные для мапсета ${mapsetId}: ${error.message}`);
+            log(`Error: ${error}`, 'dev', 'error');
+            throw new Error(`Failed to get mapset data: ${mapsetId}: ${error.message}`);
         }
     }
 
     /**
-     * Retrieves and caches beatmap data by its unique ID.
+     * Retrieves and caches calculated beatmap data by Rosu-js at server.
      * If the beatmap data is already cached, it is returned from the cache.
-     * Otherwise, it fetches the data from the server and caches it for future use.
+     * Otherwise, it fetches the data from the intermediate server and caches it for future use.
      *
      * @param {string} beatmapId - The unique identifier of the beatmap.
-     * @returns {Promise<Object>} - The filtered beatmap data.
-     * @throws {Error} - Throws an error if the data cannot be retrieved.
+     * @returns {Promise<Object>} - The filtered beatmap calculated data.
      */
-    async getBeatmapData(beatmapId) {
-        const beatmapDataFromCache = this.getDataFromCacheById(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey);
-        if (beatmapDataFromCache) {
-            log('Полные данные о карте получены из кеша:', 'dev');
-            return beatmapDataFromCache;
+    async getCalculatedBeatmapData(beatmapId) {
+        const cachedBeatmapPP = this.getCalculatedBeatmapDataFromCache(beatmapId);
+        if (cachedBeatmapPP) {
+            return cachedBeatmapPP;
+        } else {
+            const beatmapStructure = await this.getBeatmapStructureAsText(beatmapId);
+            const filteredBeatmapCalcData = await this.getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
+            log(filteredBeatmapCalcData, 'debug');
+            this.clearBeatmapsCacheIfNeeded();
+            this.cacheDataToObjectWithId(beatmapId, this.localStorageBeatmapsItemKey, this.localStorageBeatmapsKey, filteredBeatmapCalcData);
+            return filteredBeatmapCalcData;
         }
+    }
+
+    /**
+     * Fetches beatmap calculated data by rosu-pp.js from server and filter it, leaving only the required fields.
+     *
+     * @param {string} beatmapId - The unique identifier of the beatmap.
+     * @param {string} beatmapStructure - The unique identifier of the mapset.
+     * @returns {Promise<Object>} - The filtered mapset data.
+     */
+    async getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure) {
         try {
-            const response = await axios.get(`${this.serverUrl}/api/BeatmapData/${beatmapId}`);
-            log(response.data, 'dev');
-            const requiredBeatmapFields = ["aim_difficulty", "speed_difficulty", "speed_note_count", "slider_factor", "overall_difficulty", "ranked_date", "last_updated"];
-            const beatmapDataFiltered = this.filterObject(response.data.attributes, requiredBeatmapFields);
-            const dateForCache = this.getDateForCache(beatmapDataFiltered);
-            const beatmapDataFilteredWithData = {...beatmapDataFiltered, date: dateForCache};
-            this.cacheDataToObjectWithId(beatmapId, this.localStorageBeatmapDeepInfoItemKey, this.localStorageBeatmapDeepInfoKey, beatmapDataFilteredWithData);
-            this.clearBeatmapsCacheIfNeeded()
-            return beatmapDataFilteredWithData;
+            const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
+                beatmap: beatmapStructure,
+            });
+            log(response.data, 'debug');
+            let filteredBeatmapCalcData = this.filterCalculatedBeatmapData(response.data);
+            filteredBeatmapCalcData.date = new Date().toISOString();
+            return response.data;
         } catch (error) {
-            log(`Ошибка: ${error}`, 'dev', 'error');
-            throw new Error(`Не удалось получить данные для карты ${beatmapId}: ${error.message}`);
+            log(`Failed to get beatmap pp`, 'prod', 'error');
+            throw new Error(`Failed to get beatmap pp:\n ${error}`);
+        }
+    }
+
+    /**
+     * Retrieves the calculated beatmap data from the cache by beatmap ID.
+     * This function looks for the cached data in `localStorage` using the `localStorageBeatmapsKey` and the specific `beatmapId`.
+     * If the data is found in the cache, it is returned. Otherwise, it logs a message indicating that no data was found.
+     *
+     * @param {string} beatmapId - The ID of the beatmap whose calculated data is being retrieved.
+     * @returns {Object|null} - The cached beatmap data if found, or null if no cached data has not saved.
+     */
+    getCalculatedBeatmapDataFromCache(beatmapId) {
+        try {
+            const cache = JSON.parse(localStorage.getItem(this.localStorageBeatmapsKey)) || {};
+            const cacheKey = this.localStorageBeatmapsItemKey + '_' + beatmapId;
+            if (cache[cacheKey]) {
+                log('PP data recived from cache', 'dev');
+                return cache[cacheKey];
+            } else {
+                log(`No cached data found for ${beatmapId}`, 'debug');
+                return null;
+            }
+        } catch (error) {
+            log(`Failed to retrieve cached beatmap pp:\n ${error}`, 'dev', 'error');
+            return null;
         }
     }
 
@@ -105,31 +154,15 @@ class IntermediateOsuApiService {
             this.localStorageBeatmapsAmountKey), 10) || 0;
         if (beatmapsInCacheAmount >= this.mapsetsCacheLimit) {
             const beatmapsInCacheAmountInCache = this.getItemsCountFromLocalStorage(this.localStorageMapsetsKey);
-            //Проверяем сам объект на случай неправильного сохранённого значения
+            //Checking the object in case the wrong saved value
             if (beatmapsInCacheAmountInCache >= this.mapsetsCacheLimit) {
                 this.removeOldestItemsFromCache(this.localStorageMapsetsKey, this.mapsetsCacheClearItems);
                 localStorage.setItem(this.localStorageBeatmapsAmountKey, (beatmapsInCacheAmountInCache
                     - this.mapsetsCacheClearItems).toString());
-                log('Очистили часть кеша для сетов карт', 'dev');
+                log('Cleared some of the of cache for beatmapset', 'dev');
             } else {
                 localStorage.setItem(this.localStorageBeatmapsAmountKey, beatmapsInCacheAmountInCache.toString());
             }
-        }
-    }
-
-    /**
-     * Clears the cache if the number of beatmaps exceeds the cache limit for beatmaps.
-     * Removes the oldest items from the cache and updates the count in localStorage.
-     * The cache limit and the number of items to be removed are defined in the constructor
-     * with the variables `beatmapsCacheLimit` and `beatmapsCacheClearItems`.
-     *
-     * @returns {void}
-     */
-    clearBeatmapsCacheIfNeeded() {
-        const beatmapsInCacheAmountInCache = this.getItemsCountFromLocalStorage(this.localStorageBeatmapDeepInfoKey);
-        if (beatmapsInCacheAmountInCache >= this.beatmapsCacheLimit) {
-            this.removeOldestItemsFromCache(this.localStorageBeatmapDeepInfoKey, this.beatmapsCacheClearItems);
-            log('Очистили часть кеша для подробностей карты', 'dev');
         }
     }
 
@@ -234,18 +267,6 @@ class IntermediateOsuApiService {
     }
 
     /**
-     * Adds a date property to the provided object.
-     *
-     * @param {Object} object - The object to which the date will be added.
-     * @param {string} date - The date to add to the object.
-     * @returns {Object} The same object with the added date property.
-     */
-    addDateToObject(object, date) {
-        object.date = date;
-        return object;
-    }
-
-    /**
      * Counts the number of items stored in a localStorage object.
      *
      * @param {string} key - The localStorage key where the object is stored.
@@ -299,28 +320,36 @@ class IntermediateOsuApiService {
         return null;
     }
 
-    async getBeatmapCalculatedData(beatmapId) {
-        const cachedBeatmapPP = this.getBeatmapPPFromCache(beatmapId);
-        if (cachedBeatmapPP) {
-            log('PP data recived from cache', 'dev');
-            return cachedBeatmapPP;
-        } else {
-            const beatmapStructure = await this.getBeatmapStructureAsText(beatmapId);
-            try {
-                const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
-                    beatmap: beatmapStructure,
-                });
-                console.log(response.data);
-                const filteredBeatmapCalcData = this.filterCalculatedBeatmapData(response.data);
-                this.cacheBeatmapPP(filteredBeatmapCalcData, beatmapId);
-                return filteredBeatmapCalcData;
-            } catch (error) {
-                log(`Failed to get beatmap pp:\n ${error}`, 'prod', 'error');
+    /**
+     * Fetches the structure of a beatmap as text by its ID.
+     * Makes an HTTP GET request to the osu! server to download the beatmap file that contains the layout of all objects.
+     * The structure used for calculating various beatmap parameters by rosu-pp.js.
+     *
+     * @param {string} beatmapId - The ID of the beatmap to retrieve.
+     * @returns {Promise<string|undefined>} - A promise that resolves to the beatmap structure as text if successful.
+     */
+    async getBeatmapStructureAsText(beatmapId) {
+        try {
+            const response = await axios.get(`https://osu.ppy.sh/osu/${beatmapId}`, {
+                responseType: 'text',
+            });
+            const beatmapStructure = response.data;
+            if (beatmapStructure.length < 50 || typeof beatmapStructure !== 'string') {
+                log(`Something went wrong, with beatmap structure: ${beatmapStructure.length}`, 'dev');
             }
+            return beatmapStructure;
+        } catch (error) {
+            log(`Failed to get pp for beatmap: ${beatmapId}\n, ${error}`, 'prod', 'error');
         }
-        return null;
     }
 
+    /**
+     * Filters the relevant data from a full beatmap calculation object.
+     * This function extracts specific properties from the `difficulty` and `pp` fields of the input object.
+     *
+     * @param {Object} fullCalcObject - The full beatmap calculation object containing all the data.
+     * @returns {Object} filteredData - The filtered object containing only the relevant fields.
+     */
     filterCalculatedBeatmapData(fullCalcObject) {
         const filteredData = {
             difficulty: {
@@ -339,61 +368,20 @@ class IntermediateOsuApiService {
         return filteredData;
     }
 
-    async getBeatmapStructureAsText(beatmapId) {
-        try {
-            const response = await axios.get(`https://osu.ppy.sh/osu/${beatmapId}`, {
-                responseType: 'text',
-            });
-            const beatmapStructure = response.data;
-            if (beatmapStructure.length < 50 || typeof beatmapStructure !== 'string') {
-                log(`Something went wrong, with beatmap structure: ${beatmapStructure.length}`, 'dev');
-            }
-            return beatmapStructure;
-        } catch (error) {
-            log(`Failed to get pp for beatmap: ${beatmapId}\n, ${error}`, 'prod', 'error');
-        }
-    }
-
-    cacheBeatmapPP(cacheData, beatmapId) {
-        const cache = JSON.parse(localStorage.getItem(this.localStoragePPKey));
+    /**
+     * Clears the beatmaps cache if the number of cached items exceeds the specified limit.
+     * These options for method defined in the class constructor.
+     * If the cache is full, it removes the oldest beatmaps to free up space.
+     */
+    clearBeatmapsCacheIfNeeded() {
+        const cache = JSON.parse(localStorage.getItem(this.localStorageBeatmapsKey));
         if (cache) {
             const numberOfItems = Object.keys(cache).length;
             if (numberOfItems >= this.beatmapsPPCacheLimit) {
-                this.removeOldestItemsFromCache(this.localStoragePPKey, this.beatmapsPPCacheClearItems);
+                this.removeOldestItemsFromCache(this.localStorageBeatmapsKey, this.beatmapsPPCacheClearItems);
             }
         }
-        log(cacheData, 'dev');
-        try {
-            const cache = JSON.parse(localStorage.getItem('beatmapsPPCache')) || {};
-            const cacheKey = `beatmap_${beatmapId}`;
-            cacheData.date = new Date().toISOString();
-            cache[cacheKey] = JSON.stringify(cacheData);
-            localStorage.setItem(this.localStoragePPKey, JSON.stringify(cache));
-            log(`Cached data for ${beatmapId}`, 'dev');
-        } catch (error) {
-            log(`Failed to cache beatmap pp:\n ${error}`, 'dev', 'error');
-        }
-    }
-
-    // clearBeatmapsPPCacheIfNeeded() {
-    //
-    // }
-
-    getBeatmapPPFromCache(beatmapId) {
-        try {
-            const cache = JSON.parse(localStorage.getItem('beatmapsPPCache')) || {};
-            const cacheKey = `beatmap_${beatmapId}`;
-
-            if (cache[cacheKey]) {
-                return JSON.parse(cache[cacheKey]);
-            } else {
-                log(`No cached data found for ${beatmapId}`, 'full');
-                return null;
-            }
-        } catch (error) {
-            log(`Failed to retrieve cached beatmap pp:\n ${error}`, 'dev', 'error');
-            return null;
-        }
+        log(`Cleared ${this.beatmapsPPCacheClearItems} from beatmaps cache`, 'dev');
     }
 }
 

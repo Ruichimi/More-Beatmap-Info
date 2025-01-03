@@ -12,7 +12,7 @@ class MoreBeatmapInfo {
     initialize() {
         DomHelper.catchBeatmapsFromDOM()
             .then(beatmapsRows => {
-                log('Пытаемся вызвать setLastDiffInfoToMapsRows', 'dev');
+                log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {
                     this.setLastDiffInfoToMapsRows(beatmapsRows);
                 }
@@ -28,7 +28,7 @@ class MoreBeatmapInfo {
                 );
             })
             .catch(error => {
-                log(`Произошла ошибка, не удалось загрузить карты со страницы: ${error}`, 'prod', 'error');
+                log(`Failed to catch beatmaps from DOM: ${error}`, 'prod', 'error');
             });
     }
 
@@ -49,7 +49,7 @@ class MoreBeatmapInfo {
 
                 this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
             } catch (error) {
-                log(`Ошибка обработки beatmapBlock: ${error}`, 'prod', 'error');
+                log(`Failed to processing beatmapBlock: ${error}`, 'prod', 'error');
             }
         });
     }
@@ -75,7 +75,7 @@ class MoreBeatmapInfo {
             existingDeepInfoTooltip.remove();
         } else {
             try {
-                const beatmapCalcData = await OsuApi.getBeatmapCalculatedData(beatmapId);
+                const beatmapCalcData = await OsuApi.getCalculatedBeatmapData(beatmapId);
                 DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapCalcData.pp);
                 log(beatmapCalcData, 'debug');
                 const deepBeatmapDataAsString = this.createBeatmapDifficultyParamsString(beatmapCalcData.difficulty);
@@ -93,7 +93,7 @@ class MoreBeatmapInfo {
             beatmapNameBlock.innerHTML += `<div class="pp-block"></div>`;
         }
 
-        const cachedBeatmapPP = OsuApi.getBeatmapPPFromCache(beatmapId);
+        const cachedBeatmapPP = OsuApi.getCalculatedBeatmapDataFromCache(beatmapId);
         if (cachedBeatmapPP) {
             DomHelper.mountPPForBeatmapBlock(beatmapBlock, cachedBeatmapPP.pp);
         } else {
@@ -104,7 +104,7 @@ class MoreBeatmapInfo {
     }
 
     async handleGetPPBtnClick(beatmapBlock, beatmapId) {
-        const beatmapPP = await OsuApi.getBeatmapCalculatedData(beatmapId);
+        const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
         DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP.pp);
     }
 
@@ -180,7 +180,7 @@ class MoreBeatmapInfo {
     async updatePPBlockForNewBeatmapId(mapsetId, beatmapId) {
         console.log(`updating PP for beatmap set: ${mapsetId} to beatmap: ${beatmapId}`);
         const beatmapBlock = DomHelper.getMapsetBlockById(mapsetId);
-        const beatmapPP = await OsuApi.getBeatmapCalculatedData(beatmapId);
+        const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
         DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
     }
 
