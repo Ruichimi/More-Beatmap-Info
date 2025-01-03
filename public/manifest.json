@@ -12,7 +12,7 @@
     },
     "content_scripts": [
         {
-            "matches": ["https://osu.ppy.sh/beatmapsets*"],
+            "matches": ["https://osu.ppy.sh/*", "https://osu.ppy.sh/beatmapsets/*"],
             "js": ["build/content.js"],
             "css": ["build/mainCss.css"],
             "run_at": "document_end"

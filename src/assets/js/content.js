@@ -6,6 +6,39 @@ import DomHelper from "./Services/DomHelper";
 const observer = new DOMObserver();
 const MBI = new MoreBeatmapInfo(observer);
 
+let initCalled = false;
+
+const UrlObserve = new MutationObserver(() => {
+    console.log(isBeatmapSetsPage());
+    if (isBeatmapSetsPage()) {
+        if (!initCalled) {
+            console.log(window.location.href);
+            reloadExtension();
+            initCalled = true;
+        }
+    } else {
+        initCalled = false;
+    }
+});
+
+UrlObserve.observe(document.querySelector('head'), { childList: true, subtree: false });
+
+window.onload = function() {
+    if (isBeatmapSetsPage()) {
+        initMoreBeatmapInfo();
+    }
+};
+
+window.addEventListener('popstate', () => {
+    if (isBeatmapSetsPage()) {
+        reloadExtension();
+    }
+});
+
+function isBeatmapSetsPage() {
+    return window.location.pathname.startsWith('/beatmapsets');
+}
+
 function initMoreBeatmapInfo() {
     try {
         if (!document.getElementById('last-diff-info')) {
@@ -30,13 +63,4 @@ function reloadExtension(withDom = false) {
     initMoreBeatmapInfo();
 }
 
-window.onload = function() {
-    initMoreBeatmapInfo();
-};
-
-window.addEventListener('popstate', () => {
-    reloadExtension();
-});
-
 window.addEventListener('reloadExtensionRequested', () => reloadExtension(true));
-
