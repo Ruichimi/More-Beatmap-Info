@@ -137,9 +137,9 @@ class MoreBeatmapInfo {
         ${beatmapData.difficulty_rating}★
         bpm ${beatmapData.bpm}
         combo ${beatmapData.max_combo}
-        od ${beatmapData.accuracy}
         ar ${beatmapData.ar}
         cs ${beatmapData.cs}
+        od ${beatmapData.accuracy}
         hp ${beatmapData.drain}`;
     }
 

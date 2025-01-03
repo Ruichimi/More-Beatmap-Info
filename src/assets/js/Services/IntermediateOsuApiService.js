@@ -379,9 +379,9 @@ class IntermediateOsuApiService {
             const numberOfItems = Object.keys(cache).length;
             if (numberOfItems >= this.beatmapsPPCacheLimit) {
                 this.removeOldestItemsFromCache(this.localStorageBeatmapsKey, this.beatmapsPPCacheClearItems);
+                log(`Cleared ${this.beatmapsPPCacheClearItems} from beatmaps cache`, 'dev');
             }
         }
-        log(`Cleared ${this.beatmapsPPCacheClearItems} from beatmaps cache`, 'dev');
     }
 }
 

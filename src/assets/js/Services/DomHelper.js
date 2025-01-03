@@ -1,7 +1,5 @@
 import log from "/logger.js"
 
-//TODO: Пофиксить ошибку при попытке получить полную информацию о грейвярд карте
-
 class DomHelper {
     constructor() {
         this.attemptsToCatchMaps = 5;
@@ -94,7 +92,8 @@ class DomHelper {
     }
 
     createDeepInfoBtn() {
-        const btnContent = '<svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">\n  <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>\n </svg>'
+        const btnContent = `i`;
+
         const moreDiffInfoBtn = document.createElement('button');
         moreDiffInfoBtn.classList.add('more-diff-info-btn');
         moreDiffInfoBtn.innerHTML = btnContent;
@@ -155,7 +154,11 @@ class DomHelper {
         tooltip.innerText = beatmapDeepParams;
         tooltip.beatmapId = beatmapId;
         element.before(tooltip);
-        const hideTooltipOnClickDOM = () => {
+        const hideTooltipOnClickDOM = (event) => {
+            if (tooltip.contains(event.target)) {
+                return;
+            }
+
             tooltip.remove();
             document.removeEventListener('click', hideTooltipOnClickDOM);
             log('Tooltip was removed because of click on the page', 'dev');
@@ -186,10 +189,10 @@ class DomHelper {
         });
     }
 
-    createChangeDiffInfoBtn(beatmapId) {
+    createChangeDiffInfoBtn() {
         const changeDiffInfoBtn = document.createElement('button');
         changeDiffInfoBtn.classList.add('change-diff-info-button');
-        changeDiffInfoBtn.textContent = `(ID: ${beatmapId})`;
+        changeDiffInfoBtn.textContent = `Show Info`;
         return changeDiffInfoBtn;
     }
 

@@ -5,34 +5,6 @@
     margin-bottom: 6px;
 }
 
-.beatmapset-panel__info-row--title {
-    height: 23px !important;
-}
-
-.beatmap-pp-btn {
-    z-index: 100;
-    pointer-events: auto;
-    white-space: nowrap;
-    background-color: transparent;
-    color: white;
-    border: 1px solid white;
-    border-radius: 20px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s;
-    margin-bottom: 3px;
-}
-
-.beatmap-pp-btn:hover {
-    background-color: rgb(110, 103, 103);
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-.beatmapset-badge--featured_artist {
-    position: relative;
-    top: 6px;
-}
-
 .beatmap-pp-data {
     display: none;
 }
@@ -58,41 +30,79 @@
     font-size: 13px;
 }
 
-
-.beatmapset-panel {
-    height: 115px !important;
+.beatmap-pp-btn {
+    z-index: 100;
+    pointer-events: auto;
+    white-space: nowrap;
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+    margin-bottom: 3px;
 }
 
-.beatmaps-popup::before {
-    --panel-height: 115px;
+.beatmap-pp-btn:hover {
+    background-color: rgb(110, 103, 103);
+    border-color: rgba(255, 255, 255, 0.6);
 }
+
 .more-diff-info-btn {
-    color: #711fff;
-    /*background: gray;*/
-    background: 0;
-    border-radius: 100%;
-    border: none;
-    height: 20px;
+    background: linear-gradient(180deg, rgba(124, 53, 253, 0.8), rgba(144, 57, 244, 0.8), rgba(163, 35, 238, 0.8));
+    font-size: 15px;
+    font-weight: bold;
+    color: white;
+    border: 1px solid rgb(210, 210, 210);
+    border-radius: 100px;
+    width: 23px;
+    height: 23px;
+}
+
+.more-diff-info-btn:hover {
+    background: linear-gradient(180deg, rgba(105, 23, 255, 0.8), rgba(131, 28, 250, 0.8), rgba(148, 6, 231, 0.8));
 }
 
 .deep-beatmap-params-tooltip {
     position: absolute;
-    padding: 5px;
+    left: 50%;
+    transform: translate(-50%, -75%);
+    padding: 10px 15px;
     white-space: nowrap;
     z-index: 5000;
-    background: gray;
-    border-radius: 10px;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    background: linear-gradient(180deg, #7c35fd, #9039f4, #a323ee);
+    border-radius: 12px;
+    border: 2px solid #ffffff; /* Белая рамка */
+    color: #ffffff; /* Белый текст */
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    transition: all 0.3s ease-in-out;
 }
 
 .change-diff-info-button {
-    background: #711fff;
-    border: 0;
+    border: 1px rgba(215, 214, 214, 0.8) solid;
+    border-bottom: none;
     border-radius: 10px;
     margin-left: auto;
+    height: 23px;
+    font-size: 13px;
+    background: linear-gradient(180deg, #7c35fd, #9039f4, #8c23ee);
 }
 
+.change-diff-info-button:hover {
+    position: relative;
+    bottom: 2px;
+    background: linear-gradient(180deg, #9e4bff, #a64ffc, #b44aff); /* яркие цвета */}
+
+.change-diff-info-button:active {
+    bottom: 0;
+    background: linear-gradient(180deg, #7c35fd, #9039f4, #a323ee);
+}
+
+/* Edit peppy`s styles */
 .beatmap-list-item {
     display: flex !important;
     justify-content: start;
@@ -100,4 +110,21 @@
 
 .beatmaps-popup-item {
     width: 100% !important;
+}
+
+.beatmapset-badge--featured_artist {
+    position: relative;
+    top: 6px;
+}
+
+.beatmapset-panel__info-row--title {
+    height: 23px !important;
+}
+
+.beatmapset-panel {
+    height: 115px !important;
+}
+
+.beatmaps-popup::before {
+    --panel-height: 115px;
 }
