@@ -111,7 +111,7 @@ class MoreBeatmapInfo {
     createBeatmapDifficultyParamsString(beatmapData) {
         console.log(beatmapData);
         const {
-            aim, speed, nCircles, nSliders, speedNoteCount, sliderFactor, flashlight
+            aim, speed, nCircles, nSliders, speedNoteCount, flashlight
         } = beatmapData;
 
         return [
@@ -120,7 +120,6 @@ class MoreBeatmapInfo {
             `Circles: ${nCircles}`,
             `Sliders: ${nSliders}`,
             `Speed note count: ${speedNoteCount.toFixed(1)}`,
-            `Slider factor: ${sliderFactor.toFixed(3)}`,
             `FL Diff: ${flashlight.toFixed(2)}`,
         ].join(', ');
     }

@@ -358,7 +358,6 @@ class IntermediateOsuApiService {
                 nCircles: fullCalcObject.difficulty?.nCircles,
                 nSliders: fullCalcObject.difficulty?.nSliders,
                 speedNoteCount: fullCalcObject.difficulty?.speedNoteCount,
-                sliderFactor: fullCalcObject.difficulty?.sliderFactor,
                 flashlight: fullCalcObject.difficulty?.flashlight,
             },
             pp: fullCalcObject.pp,

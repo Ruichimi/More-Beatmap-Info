@@ -2,8 +2,9 @@ import log from "/logger.js"
 
 class DomHelper {
     constructor() {
-        this.attemptsToCatchMaps = 5;
+        this.attemptsToCatchMaps = 6;
         this.createdUniqueElementId = null;
+        this.beatmapsContainer = null;
     }
 
     addUniqueElementToDOM(id) {
@@ -32,9 +33,9 @@ class DomHelper {
 
     clearDOM() {
         const elementsToRemove = [
-            ...document.querySelectorAll('.more-beatmap-info'),
-            ...document.querySelectorAll('.more-diff-info-btn'),
-            //...document.querySelectorAll('.change-diff-info-button') The operation can be resource-intensive, and currently there is no need to remove these buttons
+            ...this.beatmapsContainer.querySelectorAll('.more-beatmap-info'),
+            ...this.beatmapsContainer.querySelectorAll('.more-diff-info-btn'),
+            //...this.beatmapsContainer.querySelectorAll('.change-diff-info-button') The operation can be resource-intensive, and currently there is no need to remove these buttons
         ];
 
         elementsToRemove.forEach(element => element.remove());
@@ -44,21 +45,29 @@ class DomHelper {
 
     catchBeatmapsFromDOM() {
         let attemptsToCatchMaps = this.attemptsToCatchMaps;
-        log('Вызвана функция catchMapsFromDom', 'debug');
+        log('The func catchMapsFromDom called', 'debug');
         return new Promise((resolve, reject) => {
             const attemptToCatchMaps = () => {
                 const beatmapsRows = document.getElementsByClassName('beatmapsets__items-row');
                 if (beatmapsRows.length > 0) {
-                    log('Получили карты', 'dev');
+                    log('The beatmaps has caught', 'dev');
+                    this.beatmapsContainer = document.querySelector('.beatmapsets__items');
                     resolve(beatmapsRows);
                 } else if (attemptsToCatchMaps > 1) {
-                    log('Не удалось получить карты с DOM, повторяем попытку', 'dev', 'warn');
+                    log('Failed to beatmaps maps from DOM, retrying...', 'dev', 'warn');
                     attemptsToCatchMaps--;
                     setTimeout(() => {
                         attemptToCatchMaps();
                     }, 200);
-                } else {
-                    reject('Не удалось получить карты после нескольких попыток');
+                } else if (attemptsToCatchMaps === 1) {
+                    attemptsToCatchMaps--;
+                    setTimeout(() => {
+                        console.log('The last attempt to catch beatmaps...', 'dev');
+                        attemptToCatchMaps();
+                    }, 2500);
+                }
+                else {
+                    reject(`Failed to catch beatmaps after ${this.attemptsToCatchMaps} attempts`);
                 }
             };
 
@@ -101,7 +110,7 @@ class DomHelper {
     }
 
     getExistingDeepInfoTooltip(beatmapId) {
-        const existingTooltip = document.querySelector('.deep-beatmap-params-tooltip');
+        const existingTooltip = this.beatmapsContainer.querySelector('.deep-beatmap-params-tooltip');
         log(`Is tooltip already exists: ${existingTooltip ? 'yes' : 'no'}`, 'debug');
         if (existingTooltip && existingTooltip.beatmapId === beatmapId) {
             return existingTooltip;
@@ -236,11 +245,11 @@ class DomHelper {
 
 
     getMapsetBlockById(mapsetId) {
-        return document.querySelector(`.beatmapsets__item[mapsetId="${mapsetId}"]`);
+        return this.beatmapsContainer.querySelector(`.beatmapsets__item[mapsetId="${mapsetId}"]`);
     }
 
     getMapsetBlockByCurrentDiffDisplayed(beatmapId) {
-        const mapsetBlock = document.querySelector(`.beatmapsets__item[beatmapId="${beatmapId}"]`);
+        const mapsetBlock = this.beatmapsContainer.querySelector(`.beatmapsets__item[beatmapId="${beatmapId}"]`);
         if (!mapsetBlock) {
             log(`Mapset block not found by beatmap id: ${beatmapId}`, 'dev', 'warning');
             return null;
