@@ -1,5 +1,9 @@
-import axios from "axios";
+import axios from "../axios";
 import log from "/logger";
+
+//TODO: Limit re-request when the previous one is still a Promise.
+//TODO: Caching a beatmap structure
+//TODO: Fix an issue with caching NaN data
 
 /**
  * Class for interacting with the osu! intermediate API to fetch and cache mapset and beatmap data.
@@ -13,6 +17,7 @@ import log from "/logger";
 class IntermediateOsuApiService {
     constructor() {
         this.serverUrl = "http://localhost:3000";
+
         //cache settings
         this.localStorageMapsetsKey = "beatmapsetsCache";
         this.localStorageMapsetsItemKey = "beatmapset";
@@ -384,4 +389,4 @@ class IntermediateOsuApiService {
     }
 }
 
-export default new IntermediateOsuApiService();
+export default IntermediateOsuApiService;

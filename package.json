@@ -1,6 +1,7 @@
 {
     "dependencies": {
-        "axios": "^1.6.7"
+        "axios": "^1.6.7",
+        "js-cookie": "^3.0.5"
     },
     "devDependencies": {
         "vite": "^5.1.4"
@@ -12,7 +13,7 @@
     "name": "more-beatmap-info",
     "version": "1.0.0",
     "description": "Adds information about the last difficulty from the mapset to the maps list page",
-    "main": "src/assets/js/content.js",
+    "main": "src/js/content.js",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Cadregich/More-Beatmap-Info"

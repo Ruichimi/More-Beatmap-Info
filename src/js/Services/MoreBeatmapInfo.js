@@ -1,6 +1,8 @@
-import OsuApi from './IntermediateOsuApiService';
+import OsuApiService from './IntermediateOsuApiService';
 import DomHelper from "./DomHelper";
 import log from "/logger";
+
+const OsuApi = new OsuApiService;
 
 //TODO: Оптимизировать обращения к DOM
 
@@ -176,12 +178,12 @@ class MoreBeatmapInfo {
         DomHelper.updateBeatmapIdBtn(beatmapId, beatmapInfo.mapsetId);
     }
 
-    async updatePPBlockForNewBeatmapId(mapsetId, beatmapId) {
-        console.log(`updating PP for beatmap set: ${mapsetId} to beatmap: ${beatmapId}`);
-        const beatmapBlock = DomHelper.getMapsetBlockById(mapsetId);
-        const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
-        DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
-    }
+    // async updatePPBlockForNewBeatmapId(mapsetId, beatmapId) {
+    //     console.log(`updating PP for beatmap set: ${mapsetId} to beatmap: ${beatmapId}`);
+    //     const beatmapBlock = DomHelper.getMapsetBlockById(mapsetId);
+    //     const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
+    //     DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
+    // }
 
     convertToNumericBeatmapId(beatmapId) {
         const numericBeatmapId = parseInt(beatmapId, 10);
