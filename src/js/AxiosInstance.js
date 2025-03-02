@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
+import { getClientToken, refreshClientToken } from './Services/token';
 import Config from '/config';
 
 const instance = axios.create();
@@ -12,33 +12,9 @@ const setToken = (headerName, token, errorMessage) => {
     return { [headerName]: token };
 };
 
-async function getClientToken() {
-    let token = Cookies.get('client_token');
-
-    if (!token) {
-        try {
-            const response = await axios.post('http://localhost:3000/api/token');
-            token = response.data.token;
-            Cookies.set('client_token', token, { expires: 100, secure: true });
-        } catch (error) {
-            console.error('Failed to get client token:', error);
-            return null;
-        }
-    }
-    return token;
-}
-
-async function refreshClientToken() {
-    try {
-        const response = await axios.post('http://localhost:3000/api/token');
-        const newToken = response.data.token;
-        Cookies.set('client_token', newToken, { expires: 100, secure: true });
-        return newToken;
-    } catch (error) {
-        console.error('Failed to refresh client token:', error);
-        return null;
-    }
-}
+/**
+ * Adds jwt and client id tokens to request header
+ */
 
 instance.interceptors.request.use(async config => {
     const token = await getClientToken();
@@ -52,6 +28,12 @@ instance.interceptors.request.use(async config => {
 
     return config;
 }, error => Promise.reject(error));
+
+/**
+ * If we're getting 403 error from server (Forbidden/Access denial), attempt to refresh the token
+ * and retry the original request. If token refresh is in progress, queue the requests
+ * that failed due to token expiration and resolve them once the token refresh is complete.
+ */
 
 instance.interceptors.response.use(
     response => response,

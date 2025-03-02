@@ -1,4 +1,4 @@
-import axios from "../axios";
+import axios from "../AxiosInstance";
 import log from "/logger";
 
 //TODO: Limit re-request when the previous one is still a Promise.
@@ -78,7 +78,7 @@ class IntermediateOsuApiService {
     }
 
     /**
-     * Retrieves and caches calculated beatmap data by Rosu-js at server.
+     * Retrieves and caches calculated beatmap data by Rosu-js at the server.
      * If the beatmap data is already cached, it is returned from the cache.
      * Otherwise, it fetches the data from the intermediate server and caches it for future use.
      *
