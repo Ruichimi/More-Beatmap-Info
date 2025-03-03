@@ -45,7 +45,7 @@ class IntermediateOsuApiService {
             return beatmapsetDataFromCache;
         }
 
-        const beatmapsetDataFiltered = await this.getFilteredBeatmapsetData(mapsetId);
+        const beatmapsetDataFiltered = await this.getBeatmapsetData(mapsetId);
         this.clearBeatmapsetsCacheIfNeeded();
         this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetDataFiltered);
         this.incrementBeatmapsAmountsCache();
@@ -58,7 +58,7 @@ class IntermediateOsuApiService {
      * @param {string} mapsetId - The unique identifier of the mapset.
      * @returns {Promise<Object>} - The filtered mapset data.
      */
-    async getFilteredBeatmapsetData(mapsetId) {
+    async getBeatmapsetData(mapsetId) {
         const beatmapsetBeatmapRequiredFields = ["difficulty_rating", "bpm", "max_combo", "accuracy",
             "ar", "cs", "drain", "mode", "id"];
 
@@ -76,6 +76,7 @@ class IntermediateOsuApiService {
             throw new Error(`Failed to get mapset data: ${mapsetId}: ${error.message}`);
         }
     }
+
 
     /**
      * Retrieves and caches calculated beatmap data by Rosu-js at the server.

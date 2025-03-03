@@ -5,7 +5,7 @@ import Config from '/config';
 const instance = axios.create();
 
 let isRefreshing = false;
-let failedQueue = [];
+let refreshTokenPromise = null;
 
 const setToken = (headerName, token, errorMessage) => {
     if (!token) throw new Error(errorMessage);
@@ -38,31 +38,17 @@ instance.interceptors.request.use(async config => {
 instance.interceptors.response.use(
     response => response,
     async error => {
-        const originalRequest = error.config;
-
         if (error.response && error.response.status === 403) {
-            if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject });
-                });
+            if (!isRefreshing) {
+                isRefreshing = true;
+                console.warn('403 Forbidden: Refreshing token...');
+
+                refreshTokenPromise = refreshClientToken();
             }
 
-            isRefreshing = true;
-            console.warn('403 Forbidden: Refreshing token...');
-
-            const newToken = await refreshClientToken();
-            if (newToken) {
-                originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-
-                failedQueue.forEach(({ resolve }) => resolve(instance(originalRequest)));
-                failedQueue = [];
-
-                return instance(originalRequest);
-            } else {
-                failedQueue.forEach(({ reject }) => reject(error));
-                failedQueue = [];
-                return Promise.reject(error);
-            }
+            const newToken = await refreshTokenPromise;
+            error.config.headers['Authorization'] = `Bearer ${newToken}`;
+            return instance(error.config);
         }
 
         console.error('Error:', error.response ? error.response.data : error.message);

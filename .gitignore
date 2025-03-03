@@ -3,3 +3,4 @@ node_modules
 public/build/*
 env.json
 config.js
+TODO.txt
