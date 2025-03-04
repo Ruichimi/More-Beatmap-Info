@@ -17,16 +17,18 @@ const setToken = (headerName, token, errorMessage) => {
  */
 
 instance.interceptors.request.use(async config => {
-    const token = await getClientToken();
-    const clientIdToken = Config.client_id;
+    if (!config.headers['x-retry-request']) {
+        const token = await getClientToken();
+        const clientIdToken = Config.client_id;
 
-    config.headers = {
-        ...config.headers,
-        ...setToken('Authorization', `Bearer ${token}`, `Failed to get client token: '${token}'`),
-        ...setToken('x-client-id', clientIdToken, `Failed to get client id token: '${clientIdToken}'`)
-    };
+        config.headers = {
+            ...config.headers,
+            ...setToken('Authorization', `Bearer ${token}`, `Failed to get client token: '${token}'`),
+            ...setToken('x-client-id', clientIdToken, `Failed to get client id token: '${clientIdToken}'`)
+        };
 
-    return config;
+        return config;
+    }
 }, error => Promise.reject(error));
 
 /**
@@ -47,7 +49,9 @@ instance.interceptors.response.use(
             }
 
             const newToken = await refreshTokenPromise;
+            if (isRefreshing) isRefreshing = false;
             error.config.headers['Authorization'] = `Bearer ${newToken}`;
+            error.config.headers['x-retry-request'] = true;
             return instance(error.config);
         }
 
