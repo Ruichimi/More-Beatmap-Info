@@ -16,11 +16,11 @@ class MoreBeatmapInfo {
             .then(beatmapsRows => {
                 log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
                 if (beatmapsRows) {
-                    this.setLastDiffInfoToMapsRows(beatmapsRows);
+                    this.setLastDiffInfoToBeatmapsRows(beatmapsRows);
                 }
                 this.domObserver.startObserving(
                     '.beatmapsets__items',
-                    (addedNodes) => this.setLastDiffInfoToMapsRows(addedNodes),
+                    (addedNodes) => this.setLastDiffInfoToBeatmapsRows(addedNodes),
                     {childList: true, subtree: false}
                 );
 
@@ -41,22 +41,30 @@ class MoreBeatmapInfo {
         });
     }
 
-    setLastDiffInfoToMapsRows(beatmapsBlocksRows) {
+    setLastDiffInfoToBeatmapsRows(beatmapsBlocksRows) {
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
-        beatmapsBlocks.map(async (beatmapBlock) => {
-            try {
-                const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
-                const mapsetData = await OsuApi.getMapsetData(mapsetId);
-                const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-
-                this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
-            } catch (error) {
-                log(`Failed to processing beatmapBlock: ${error}`, 'prod', 'error');
-            }
+        beatmapsBlocks.map((beatmapBlock) => {
+            this.setInfoToBeatmapBlock(beatmapBlock);
         });
     }
 
+    async setInfoToBeatmapBlock(beatmapBlock) {
+        try {
+            const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
+            const mapsetData = await OsuApi.getMapsetData(mapsetId);
+            const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+
+            this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
+        } catch (error) {
+            log(`Failed to process beatmapBlock: ${error}`, 'prod', 'error');
+        }
+    }
+
     updateBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
+        if (!beatmapData) {
+            return this.handleMissingBeatmapData(beatmapBlock, mapsetId);
+        }
+
         beatmapBlock.setAttribute('mapsetId', mapsetId);
         beatmapBlock.setAttribute('beatmapId', beatmapData.id);
         const mapDiffInfoString = this.createBeatmapParamsAsString(beatmapData);
@@ -66,6 +74,25 @@ class MoreBeatmapInfo {
             DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, (block) => this.handleDeepInfoBtnClick(block));
         }
         this.setBeatmapPPReceivingToBlock(beatmapBlock, beatmapData.id);
+    }
+
+    handleMissingBeatmapData(beatmapBlock, mapsetId) {
+        beatmapBlock.setAttribute('mapsetId', mapsetId);
+        const failedInfoBlock = document.createElement('div');
+        failedInfoBlock.textContent = 'Failed to get beatmap data';
+        const retryGetInfoBtn = DomHelper.createRetryGetInfoBtn();
+        failedInfoBlock.appendChild(retryGetInfoBtn);
+
+        DomHelper.mountBeatmapInfoToBlock(beatmapBlock, mapsetId, failedInfoBlock);
+
+        retryGetInfoBtn.addEventListener('click', async () => {
+            try {
+                await this.setInfoToBeatmapBlock(beatmapBlock);
+                failedInfoBlock.remove();
+            } catch (error) {
+                log(`Error processing beatmap block: ${error}`, 'dev', 'error');
+            }
+        });
     }
 
     async handleDeepInfoBtnClick(beatmapBlock) {

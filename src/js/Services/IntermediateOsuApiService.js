@@ -3,7 +3,6 @@ import log from "/logger";
 
 //TODO: Limit re-request when the previous one is still a Promise.
 //TODO: Caching a beatmap structure
-//TODO: Fix an issue with caching NaN data
 
 /**
  * Class for interacting with the osu! intermediate API to fetch and cache mapset and beatmap data.
@@ -46,9 +45,11 @@ class IntermediateOsuApiService {
         }
 
         const beatmapsetDataFiltered = await this.getBeatmapsetData(mapsetId);
-        this.clearBeatmapsetsCacheIfNeeded();
-        this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetDataFiltered);
-        this.incrementBeatmapsAmountsCache();
+        if (beatmapsetDataFiltered) {
+            this.clearBeatmapsetsCacheIfNeeded();
+            this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, beatmapsetDataFiltered);
+        }
+
         return beatmapsetDataFiltered;
     }
 
@@ -64,6 +65,9 @@ class IntermediateOsuApiService {
 
         try {
             const response = await axios.get(`${this.serverUrl}/api/MapsetData/${mapsetId}`);
+            if (!(typeof response.data === 'object' && response.data !== null && 'id' in response.data)) {
+                throw new Error(`Received bad response for ${mapsetId} mapset`);
+            }
             const dateForCache = this.getDateForCache(response.data);
             const beatmaps = response.data.beatmaps.map((beatmap) =>
                 this.filterObject(beatmap, beatmapsetBeatmapRequiredFields)
@@ -72,8 +76,9 @@ class IntermediateOsuApiService {
             beatmapsetDataFiltered.date = dateForCache;
             return beatmapsetDataFiltered;
         } catch (error) {
-            log(`Error: ${error}`, 'dev', 'error');
-            throw new Error(`Failed to get mapset data: ${mapsetId}: ${error.message}`);
+            log(`Error: ${error.message}`, 'dev', 'error');
+            return null;
+            //throw new Error(`Failed to get mapset data: ${mapsetId}: ${error.message}`);
         }
     }
 

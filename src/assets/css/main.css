@@ -3,6 +3,19 @@
     white-space: nowrap;
     height: 15px;
     margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.retry-get-info-btn {
+    pointer-events: auto;
+    z-index: 10;
+    background: linear-gradient(180deg, rgba(124, 53, 253, 0.6), rgba(144, 57, 244, 0.6), rgba(163, 35, 238, 0.6));
+    font-size: 15px;
+    color: white;
+    border: 1px solid rgb(210, 210, 210);
+    border-radius: 10px;
+    margin-left: 3px;
 }
 
 .beatmap-pp-data {

@@ -75,15 +75,29 @@ class DomHelper {
         });
     }
 
-    mountBeatmapInfoToBlock(beatmapBlock, mapsetId, beatmapInfoString) {
-        const infoBlock = document.createElement('div');
-        const statsRowBlock = beatmapBlock.querySelector('.beatmapset-panel__info-row--stats');
-        infoBlock.classList.add('more-beatmap-info-block');
-        infoBlock.id = mapsetId;
-        statsRowBlock.parentNode.insertBefore(infoBlock, statsRowBlock.nextSibling);
-        infoBlock.innerHTML = beatmapInfoString;
+    mountBeatmapInfoToBlock(beatmapBlock, mapsetId, beatmapInfo) {
+        let infoBlock = beatmapBlock.querySelector('.more-beatmap-info-block');
+        if (!infoBlock) {
+            infoBlock = document.createElement('div');
+            infoBlock.classList.add('more-beatmap-info-block');
+            infoBlock.id = mapsetId;
+
+            const statsRowBlock = beatmapBlock.querySelector('.beatmapset-panel__info-row--stats');
+            statsRowBlock.parentNode.insertBefore(infoBlock, statsRowBlock.nextSibling);
+        }
+
+        infoBlock.innerHTML = '';
+
+        if (typeof beatmapInfo === 'string') {
+            infoBlock.innerHTML = beatmapInfo;
+        } else if (beatmapInfo instanceof HTMLElement) {
+            infoBlock.appendChild(beatmapInfo);
+        }
+
         return infoBlock;
     }
+
+
 
     getMapsetIdFromBlock(beatmapBlock) {
         const href = beatmapBlock.querySelector('a').getAttribute('href');
@@ -255,6 +269,13 @@ class DomHelper {
             return null;
         }
         return mapsetBlock;
+    }
+
+    createRetryGetInfoBtn() {
+        const retryGetInfoBtn = document.createElement('button');
+        retryGetInfoBtn.classList.add('retry-get-info-btn');
+        retryGetInfoBtn.textContent = 'retry';
+        return retryGetInfoBtn;
     }
 }
 
