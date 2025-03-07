@@ -6,7 +6,7 @@ import DomHelper from "./Services/DomHelper";
 const observer = new DOMObserver();
 const MBI = new MoreBeatmapInfo(observer);
 
-window.onload = function() {
+window.onload = function () {
     if (isBeatmapSetsPage()) {
         initMoreBeatmapInfo();
     }
@@ -64,7 +64,7 @@ function observeBeatmapsetsPageAndLoadExtension() {
         }
     });
 
-    UrlObserve.observe(document.querySelector('head'), { childList: true, subtree: false });
+    UrlObserve.observe(document.querySelector('head'), {childList: true, subtree: false});
 }
 
 window.addEventListener('reloadExtensionRequested', () => reloadExtension(true));

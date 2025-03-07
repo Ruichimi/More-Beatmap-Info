@@ -1,0 +1,29 @@
+#notification {
+    position: fixed;
+    top: 20px;
+    right: -300px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    transition: right 0.5s ease-out;
+}
+
+@keyframes fadeOut {
+    0% {
+        opacity: 1;
+        right: 20px;
+    }
+    100% {
+        opacity: 0;
+        right: -300px;
+    }
+}
+
+.notification-fade-out {
+    animation: fadeOut 1s forwards;
+}

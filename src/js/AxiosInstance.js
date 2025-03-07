@@ -1,11 +1,35 @@
 import axios from 'axios';
 import { getClientToken, refreshClientToken } from './Services/token';
+import { showNotification, closeNotification } from "@/js/Services/notification";
 import Config from '/config';
 
-const instance = axios.create();
+const instance = axios.create({
+    timeout: 10000,
+});
 
 let isRefreshing = false;
 let refreshTokenPromise = null;
+let isNotificationOnScreen = false;
+instance.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        if (error.response && error.response.status === 429) {
+            if (!isNotificationOnScreen) {
+                console.log('Показываем уведомление');
+                const notification = showNotification('Too many requests! Please try again later.');
+                isNotificationOnScreen = true;
+
+                setTimeout(() => {
+                    closeNotification(notification);
+                    isNotificationOnScreen = false;
+                }, 10000);
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 const setToken = (headerName, token, errorMessage) => {
     if (!token) throw new Error(errorMessage);
