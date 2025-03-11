@@ -5,12 +5,10 @@ export default {
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
-            '$': path.resolve(__dirname, 'src/js'),
+            '@assets': path.resolve(__dirname, 'src/assets'),
         },
     },
     build: {
-        outDir: 'public/build/',
-        assetsDir: 'public',
         rollupOptions: {
             input: {
                 content: path.resolve(__dirname, 'src/js/content.js'),
@@ -28,5 +26,5 @@ export default {
     css: {
         postcss: {},
     },
-    publicDir: false,
+    publicDir: 'public',
 };
