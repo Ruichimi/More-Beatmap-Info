@@ -49,13 +49,11 @@ function reloadExtension(withDom = false) {
 }
 
 function observeBeatmapsetsPageAndLoadExtension() {
-    let initCalled = false;
+    let initCalled = true;
 
     const UrlObserve = new MutationObserver(() => {
-        log(isBeatmapSetsPage(), 'debug');
         if (isBeatmapSetsPage()) {
             if (!initCalled) {
-                console.log(window.location.href);
                 reloadExtension();
                 initCalled = true;
             }
