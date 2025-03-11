@@ -3,7 +3,7 @@ import Config from '/config';
 import Cookies from "js-cookie";
 import {setToken, refreshClientToken} from './Services/token';
 import showNotificationErrorIfNotExist from '@/js/Notifications/TooManyRequestsNotification';
-import log from "/logger.js"
+import log from "@/js/logger.js";
 
 //TODO: Make sure that if refreshTokenPromise will fail, it won't request it everytime.
 

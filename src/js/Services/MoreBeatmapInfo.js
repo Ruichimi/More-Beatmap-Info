@@ -1,6 +1,6 @@
 import OsuApiService from './IntermediateOsuApiService';
 import DomHelper from "./DomHelper";
-import log from "/logger";
+import log from "@/js/logger.js";
 
 const OsuApi = new OsuApiService;
 

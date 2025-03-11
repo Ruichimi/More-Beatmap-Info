@@ -1,4 +1,4 @@
-import log from "/logger.js";
+import log from "@/js/logger.js";
 
 class DOMObserver {
     constructor() {

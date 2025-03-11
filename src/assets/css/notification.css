@@ -1,4 +1,4 @@
-#notification {
+.notification {
     position: fixed;
     top: 20px;
     right: -300px;
@@ -11,19 +11,47 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     z-index: 9999;
     transition: right 0.5s ease-out;
+    transform-origin: top right;
+    max-width: 400px;
 }
 
 @keyframes fadeOut {
     0% {
         opacity: 1;
-        right: 20px;
     }
     100% {
         opacity: 0;
-        right: -300px;
+    }
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
     }
 }
 
 .notification-fade-out {
-    animation: fadeOut 1s forwards;
+    animation: fadeOut 0.5s forwards;
+}
+
+.notification-fade-in {
+    animation: fadeIn 0.5s forwards;
+}
+
+.notification-remove-background {
+    background: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#notification-button {
+    width: 50px;
+    height: 50px;
+    border: 1px solid black;
+    border-radius: 100px;
+    padding: 5px;
+    background: linear-gradient(180deg, rgba(124, 53, 253, 0.7), rgba(144, 57, 244, 0.7), rgba(163, 35, 238, 0.7));
 }

@@ -1,8 +1,9 @@
 import axios from "../AxiosInstance";
-import log from "/logger";
+import log from "@/js/logger.js";
 
 //TODO: Limit re-request when the previous one is still a Promise.
 //TODO: Caching a beatmap structure
+//TODO: Validate beatmap pp data
 
 /**
  * Class for interacting with the osu! intermediate API to fetch and cache mapset and beatmap data.

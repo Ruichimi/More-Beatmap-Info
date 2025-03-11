@@ -1,4 +1,4 @@
-import log from "/logger";
+import log from "@/js/logger.js";
 import DOMObserver from "./Services/DOMObserver";
 import MoreBeatmapInfo from "./Services/MoreBeatmapInfo";
 import DomHelper from "./Services/DomHelper";

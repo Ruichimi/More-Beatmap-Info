@@ -1,4 +1,4 @@
-import log from "/logger.js"
+import log from "@/js/logger.js";
 
 class DomHelper {
     constructor() {
@@ -35,10 +35,15 @@ class DomHelper {
         const elementsToRemove = [
             ...this.beatmapsContainer.querySelectorAll('.more-beatmap-info'),
             ...this.beatmapsContainer.querySelectorAll('.more-diff-info-btn'),
-            //...this.beatmapsContainer.querySelectorAll('.change-diff-info-button') The operation can be resource-intensive, and currently there is no need to remove these buttons
+            //...this.beatmapsContainer.querySelectorAll('.change-diff-info-button') // Закомментировано, так как это может быть ресурсоемко
         ];
 
-        elementsToRemove.forEach(element => element.remove());
+        elementsToRemove.forEach(element => {
+            if (element) {
+                element.remove();
+            }
+        });
+
         this.removeUniqueElementFromDOM();
         log('The DOM was cleared', 'dev');
     }
