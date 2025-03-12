@@ -16,8 +16,6 @@ import log from "@/js/logger.js";
 
 class IntermediateOsuApiService {
     constructor() {
-        this.serverUrl = "http://localhost:3000";
-
         //cache settings
         this.localStorageMapsetsKey = "beatmapsetsCache";
         this.localStorageMapsetsItemKey = "beatmapset";
@@ -65,7 +63,7 @@ class IntermediateOsuApiService {
             "ar", "cs", "drain", "mode", "id"];
 
         try {
-            const response = await axios.get(`${this.serverUrl}/api/MapsetData/${mapsetId}`);
+            const response = await axios.get(`/api/MapsetData/${mapsetId}`);
             if (!(typeof response.data === 'object' && response.data !== null && 'id' in response.data)) {
                 throw new Error(`Received bad response for ${mapsetId} mapset`);
             }
@@ -115,7 +113,7 @@ class IntermediateOsuApiService {
      */
     async getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure) {
         try {
-            const response = await axios.post(`${this.serverUrl}/api/BeatmapPP/${beatmapId}`, {
+            const response = await axios.post(`/api/BeatmapPP/${beatmapId}`, {
                 beatmap: beatmapStructure,
             });
             log(response.data, 'debug');
@@ -288,20 +286,6 @@ class IntermediateOsuApiService {
         const storageData = JSON.parse(localStorage.getItem(key)) || {};
         log(storageData, 'debug');
         return Object.keys(storageData).length;
-    }
-
-    /**
-     * Increments the cached amount of beatmaps stored in localStorage.
-     *
-     * This method retrieves the current beatmap count from localStorage, increments it by 1,
-     * and then stores the updated value back in localStorage.
-     *
-     * @returns {void}
-     */
-    incrementBeatmapsAmountsCache() {
-        const currentAmount = parseInt(localStorage.getItem(this.localStorageBeatmapsAmountKey)
-            || '0', 10);
-        localStorage.setItem(this.localStorageBeatmapsAmountKey, (currentAmount + 1).toString());
     }
 
     /**

@@ -12,6 +12,7 @@ import log from "@/js/logger.js";
  */
 
 const instance = axios.create({
+    baseURL: 'http://localhost:3000',
     timeout: 12000,
 });
 
