@@ -43,22 +43,59 @@ class MoreBeatmapInfo {
 
     setLastDiffInfoToBeatmapsRows(beatmapsBlocksRows) {
         const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
-        beatmapsBlocks.map((beatmapBlock) => {
-            this.setInfoToBeatmapBlock(beatmapBlock);
-        });
+        this.setInfoToBeatmapBlocks(beatmapsBlocks);
+        // beatmapsBlocks.map((beatmapBlock) => {
+        //     this.setInfoToBeatmapBlock(beatmapBlock);
+        // });
+    }
+
+    async setInfoToBeatmapBlocks(beatmapBlocks) {
+        try {
+            if (!Array.isArray(beatmapBlocks) || beatmapBlocks.length === 0) {
+                return;
+            }
+
+            let mapsetsIds = [];
+            let beatmapBlockMap = new Map();
+
+            for (const beatmapBlock of beatmapBlocks) {
+                const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
+                mapsetsIds.push(mapsetId);
+                beatmapBlockMap.set(beatmapBlock, mapsetId);
+            }
+
+            const mapsetData = await OsuApi.getMapsetsData(mapsetsIds);
+
+            for (const [beatmapBlock, mapsetId] of beatmapBlockMap) {
+                if (mapsetData[mapsetId]) {
+                    this.mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData[mapsetId]);
+                }
+            }
+        } catch (err) {
+            log(err, 'dev', 'error');
+            console.error(err);
+        }
+
     }
 
     async setInfoToBeatmapBlock(beatmapBlock) {
         try {
             const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
             const mapsetData = await OsuApi.getMapsetData(mapsetId);
-            const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-
-            this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
+            this.mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData);
         } catch (error) {
             log(`Failed to process beatmapBlock: ${error}`, 'prod', 'error');
         }
     }
+
+   mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
+       try {
+           const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+           this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
+       } catch (error) {
+           throw new Error(`Failed to mount info beatmapBlock: ${error}`);
+       }
+   }
 
     updateBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
         if (!beatmapData) {

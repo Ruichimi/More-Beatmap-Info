@@ -1,7 +1,6 @@
-import axios from "../AxiosInstance";
+import axios from "../AxiosWrapper";
 import log from "@/js/logger.js";
 
-//TODO: Limit re-request when the previous one is still a Promise.
 //TODO: Caching a beatmap structure
 //TODO: Validate beatmap pp data
 
@@ -28,6 +27,42 @@ class IntermediateOsuApiService {
         this.beatmapsPPCacheClearItems = 200;
     }
 
+    async getMapsetsData(mapsetsIds = []) {
+        try {
+            if (!Array.isArray(mapsetsIds) || !(mapsetsIds.length > 1)) {
+                throw new Error(`Undefined array or empty`);
+            }
+
+            let idsToFetch = [];
+            let result = {};
+
+            for (const mapsetId of mapsetsIds) {
+                const mapsetDataFromCache = this.getDataFromCacheById(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey);
+                if (mapsetDataFromCache) {
+                    result[mapsetId] = mapsetDataFromCache;
+                } else {
+                    idsToFetch.push(mapsetId);
+                }
+            }
+
+            if (idsToFetch.length > 0) {
+                const fetchedBeatmapsets = await this.getBeatmapsetsData(idsToFetch);
+                Object.assign(result, fetchedBeatmapsets);
+
+                for (const mapsetId of idsToFetch) {
+                    const fetchedData = fetchedBeatmapsets[mapsetId];
+                    if (fetchedData) {
+                        this.cacheDataToObjectWithId(mapsetId, this.localStorageMapsetsItemKey, this.localStorageMapsetsKey, fetchedData);
+                    }
+                }
+            }
+
+            return result;
+        } catch(err) {
+            throw new Error("Ну пиписечька", { cause: err });
+        }
+    }
+
     /**
      * Retrieves and caches filtered mapset data.
      * If the mapset data is already cached, it is returned from the cache.
@@ -52,6 +87,24 @@ class IntermediateOsuApiService {
         return beatmapsetDataFiltered;
     }
 
+    async getBeatmapsetsData(mapsetsIds) {
+        try {
+            const result = {};
+            const idsString = mapsetsIds.join(',');
+
+            // Отправляем запрос через GET, передавая ids в query string
+            const response = await axios.get(`/api/MapsetsData?mapsetsIds=${idsString}`);
+
+            for (const [beatmapsetId, beatmapsetData] of Object.entries(response.data)) {
+                result[beatmapsetId] = this.processBeatmapsetData(beatmapsetId, beatmapsetData);
+            }
+
+            return result;
+        } catch (error) {
+            throw new Error('Failed to fetch mapset data', {cause : error});
+        }
+    }
+
     /**
      * Fetches beatmapset data from server and filter it, leaving only the required fields.
      *
@@ -59,28 +112,31 @@ class IntermediateOsuApiService {
      * @returns {Promise<Object>} - The filtered mapset data.
      */
     async getBeatmapsetData(mapsetId) {
-        const beatmapsetBeatmapRequiredFields = ["difficulty_rating", "bpm", "max_combo", "accuracy",
-            "ar", "cs", "drain", "mode", "id"];
-
         try {
             const response = await axios.get(`/api/MapsetData/${mapsetId}`);
-            if (!(typeof response.data === 'object' && response.data !== null && 'id' in response.data)) {
-                throw new Error(`Received bad response for ${mapsetId} mapset`);
-            }
-            const dateForCache = this.getDateForCache(response.data);
-            const beatmaps = response.data.beatmaps.map((beatmap) =>
-                this.filterObject(beatmap, beatmapsetBeatmapRequiredFields)
-            );
-            let beatmapsetDataFiltered = {...this.filterObject(response.data, ['bpm']), beatmaps};
-            beatmapsetDataFiltered.date = dateForCache;
-            return beatmapsetDataFiltered;
+            return this.processBeatmapsetData(mapsetId, response.data);
         } catch (error) {
-            log(`Error: ${error.message}`, 'dev', 'error');
             return null;
-            //throw new Error(`Failed to get mapset data: ${mapsetId}: ${error.message}`);
         }
     }
 
+    processBeatmapsetData(beatmapsetId, beatmapsetData) {
+        try {
+            const beatmapsetBeatmapRequiredFields = ["difficulty_rating", "bpm", "max_combo", "accuracy", "ar", "cs", "drain", "mode", "id"];
+            if (!(typeof beatmapsetData === 'object' && beatmapsetData !== null && 'id' in beatmapsetData)) {
+                throw new Error(`Received bad response for ${beatmapsetId} mapset`);
+            }
+            const dateForCache = this.getDateForCache(beatmapsetData);
+            const beatmaps = beatmapsetData.beatmaps.map((beatmap) =>
+                this.filterObject(beatmap, beatmapsetBeatmapRequiredFields)
+            );
+            let beatmapsetDataFiltered = {...this.filterObject(beatmapsetData, ['bpm']), beatmaps};
+            beatmapsetDataFiltered.date = dateForCache;
+            return beatmapsetDataFiltered;
+        } catch(err) {
+            log(`Failed to process beatmapsetData for ${beatmapsetId}: ${err.message}`, 'dev', 'error');
+        }
+    }
 
     /**
      * Retrieves and caches calculated beatmap data by Rosu-js at the server.
