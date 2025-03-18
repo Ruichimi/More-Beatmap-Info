@@ -14,7 +14,7 @@ function showNotificationErrorIfNotExist() {
         setTimeout(() => {
             closeNotification(notification);
             isNotificationOnScreen = false;
-        }, 15000);
+        }, 25000);
 
         return notification;
     }

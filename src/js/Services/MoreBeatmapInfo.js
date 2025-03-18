@@ -1,4 +1,5 @@
 import OsuApiService from './IntermediateOsuApiService';
+import cache from './CacheService';
 import DomHelper from "./DomHelper";
 import log from "@/js/logger.js";
 
@@ -12,26 +13,31 @@ class MoreBeatmapInfo {
     }
 
     initialize() {
-        DomHelper.catchBeatmapsFromDOM()
-            .then(beatmapsRows => {
-                log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
-                if (beatmapsRows) {
-                    this.setLastDiffInfoToBeatmapsRows(beatmapsRows);
-                }
-                this.domObserver.startObserving(
-                    '.beatmapsets__items',
-                    (addedNodes) => this.setLastDiffInfoToBeatmapsRows(addedNodes),
-                    {childList: true, subtree: false}
-                );
+        try {
+            DomHelper.catchBeatmapsFromDOM()
+                .then(beatmapsRows => {
+                    log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
+                    if (beatmapsRows) {
+                        this.setLastDiffInfoToBeatmapsRows(beatmapsRows);
+                    }
+                    this.domObserver.startObserving(
+                        '.beatmapsets__items',
+                        (addedNodes) => this.setLastDiffInfoToBeatmapsRows(addedNodes),
+                        {childList: true, subtree: false}
+                    );
 
-                this.domObserver.observeDynamicElement(
-                    '.beatmaps-popup__group',
-                    (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
-                );
-            })
-            .catch(error => {
-                log(`Failed to catch beatmaps from DOM: ${error}`, 'prod', 'error');
-            });
+                    this.domObserver.observeDynamicElement(
+                        '.beatmaps-popup__group',
+                        (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
+                    );
+                })
+                .catch(error => {
+                    log(`Failed to catch beatmaps from DOM: ${error}`, 'prod', 'error');
+                });
+        } catch (err) {
+            log(err, 'dev', 'error');
+            //throw new Error(`Failed to initialize More Beatmap Info`, {cause: err});
+        }
     }
 
     processPopupGroupChanges(beatmapDiffsGroup) {
@@ -42,11 +48,12 @@ class MoreBeatmapInfo {
     }
 
     setLastDiffInfoToBeatmapsRows(beatmapsBlocksRows) {
-        const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
-        this.setInfoToBeatmapBlocks(beatmapsBlocks);
-        // beatmapsBlocks.map((beatmapBlock) => {
-        //     this.setInfoToBeatmapBlock(beatmapBlock);
-        // });
+        try {
+            const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
+            this.setInfoToBeatmapBlocks(beatmapsBlocks);
+        } catch(err) {
+            throw err;
+        }
     }
 
     async setInfoToBeatmapBlocks(beatmapBlocks) {
@@ -72,10 +79,9 @@ class MoreBeatmapInfo {
                 }
             }
         } catch (err) {
-            log(err, 'dev', 'error');
-            console.error(err);
+            log(err, 'prod', 'error');
+            //throw new Error('Failed to set mount info in beatmap block', {cause: err});
         }
-
     }
 
     async setInfoToBeatmapBlock(beatmapBlock) {
@@ -88,14 +94,14 @@ class MoreBeatmapInfo {
         }
     }
 
-   mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
-       try {
-           const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-           this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
-       } catch (error) {
-           throw new Error(`Failed to mount info beatmapBlock: ${error}`);
-       }
-   }
+    mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
+        try {
+            const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+            this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
+        } catch (error) {
+            throw new Error(`Failed to mount info beatmapBlock: ${error}`);
+        }
+    }
 
     updateBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
         if (!beatmapData) {
@@ -159,7 +165,7 @@ class MoreBeatmapInfo {
             beatmapNameBlock.innerHTML += `<div class="pp-block"></div>`;
         }
 
-        const cachedBeatmapPP = OsuApi.getCalculatedBeatmapDataFromCache(beatmapId);
+        const cachedBeatmapPP = cache.getBeatmap(beatmapId);
         if (cachedBeatmapPP) {
             DomHelper.mountPPForBeatmapBlock(beatmapBlock, cachedBeatmapPP.pp);
         } else {
@@ -231,7 +237,7 @@ class MoreBeatmapInfo {
         if (this.isBeatmapInfoAlreadyDisplayed(beatmapId)) return;
 
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
-        const beatmapInfo = OsuApi.getDiffInfoByIdFromCache(numericBeatmapId);
+        const beatmapInfo = cache.getBeatmapInfoByIdFromMapsetsCache(numericBeatmapId);
         if (!beatmapInfo) {
             this.handleMissingBeatmapInfo(numericBeatmapId);
             return;
@@ -271,7 +277,7 @@ class MoreBeatmapInfo {
         this.reloadExtensionEvent();
 
         setTimeout(() => {
-            const retryBeatmapInfo = OsuApi.getDiffInfoByIdFromCache(numericBeatmapId);
+            const retryBeatmapInfo = cache.getBeatmapInfoByIdFromMapsetsCache(numericBeatmapId);
             if (retryBeatmapInfo) {
                 log(retryBeatmapInfo, 'debug');
                 const beatmapBlock = DomHelper.getMapsetBlockById(retryBeatmapInfo.mapsetId);
