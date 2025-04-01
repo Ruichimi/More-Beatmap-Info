@@ -74,23 +74,50 @@ class IntermediateOsuApiService {
     }
 
     /**
-     * Retrieves and caches calculated beatmap data by Rosu-js at the server.
-     * If the beatmap data is already cached, it is returned from the cache.
-     * Otherwise, it fetches the data from the intermediate server and caches it for future use.
+     * Retrieves and caches calculated beatmap data from the server using Rosu-js.
+     * If the beatmap data is already cached locally, it is returned from the cache.
+     * If not, the server is checked for a cached result, and if unavailable,
+     * the beatmap structure is fetched and new data is calculated.
+     * Then the result is then cached locally.
      *
      * @param {string} beatmapId - The unique identifier of the beatmap.
-     * @returns {Promise<Object>} - The filtered beatmap calculated data.
+     * @returns {Promise<Object>} - The filtered and calculated beatmap data.
      */
     async getCalculatedBeatmapData(beatmapId) {
         const cachedBeatmapPP = cache.getBeatmap(beatmapId);
         if (cachedBeatmapPP) {
             return cachedBeatmapPP;
         } else {
+            const beatmapData = await this.getBeatmapPP(beatmapId);
+            cache.setBeatmap(beatmapId, beatmapData);
+            return beatmapData;
+        }
+    }
+
+    async getBeatmapPP(beatmapId) {
+        let filteredBeatmapCalcData;
+        try {
+            const serverCachedBeatmapData = await this.tryGetCachedBeatmapPP(beatmapId);
+            filteredBeatmapCalcData = this.#filterCalculatedBeatmapData(serverCachedBeatmapData);
+            console.log('Server cached beatmap data received from the cache', 'dev');
+        } catch (error) {
             const beatmapStructure = await this.#getBeatmapStructureAsText(beatmapId);
-            const filteredBeatmapCalcData = await this.#getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
+            filteredBeatmapCalcData = await this.#getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
             log(filteredBeatmapCalcData, 'debug');
-            cache.setBeatmap(beatmapId, filteredBeatmapCalcData);
-            return filteredBeatmapCalcData;
+        }
+
+        return filteredBeatmapCalcData;
+    }
+
+    async tryGetCachedBeatmapPP(beatmapId) {
+        try {
+            const response = await axios.get(`/api/cachedBeatmapData/${beatmapId}`);
+            if (!response.data || Object.keys(response.data).length === 0) {
+                throw new Error(`Cached beatmap data is empty`);
+            }
+            return response.data;
+        } catch (error) {
+            throw new Error(`Failed to get cached beatmap data: ${error.message}`);
         }
     }
 
@@ -197,9 +224,7 @@ class IntermediateOsuApiService {
             });
             console.log(response.data);
             log(response.data, 'debug');
-            let filteredBeatmapCalcData = this.#filterCalculatedBeatmapData(response.data);
-            filteredBeatmapCalcData.date = new Date().toISOString();
-            return response.data;
+            return this.#filterCalculatedBeatmapData(response.data);
         } catch (error) {
             log(`Failed to get beatmap pp`, 'prod', 'error');
             throw new Error(`Failed to get beatmap pp:\n ${error}`);
@@ -253,18 +278,15 @@ class IntermediateOsuApiService {
      * @returns {Object} filteredData - The filtered object containing only the relevant fields.
      */
     #filterCalculatedBeatmapData(fullCalcObject) {
-        const filteredData = {
-            difficulty: {
-                aim: fullCalcObject.difficulty?.aim,
-                speed: fullCalcObject.difficulty?.speed,
-                nCircles: fullCalcObject.difficulty?.nCircles,
-                nSliders: fullCalcObject.difficulty?.nSliders,
-                speedNoteCount: fullCalcObject.difficulty?.speedNoteCount,
-                flashlight: fullCalcObject.difficulty?.flashlight,
-            },
-            pp: fullCalcObject.pp,
-        };
+        const round = (value) => (value != null ? parseFloat(value.toFixed(3)) : undefined);
 
+        const difficulty = Object.fromEntries(
+            Object.entries(fullCalcObject.difficulty || {})
+                .map(([key, value]) => [key, round(value)])
+        );
+
+        const filteredData = { difficulty, pp: round(fullCalcObject.pp) };
+        filteredData.date = new Date().toISOString();
         log(filteredData, 'full');
         return filteredData;
     }
