@@ -51,7 +51,7 @@ class MoreBeatmapInfo {
         try {
             const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
             this.setInfoToBeatmapBlocks(beatmapsBlocks);
-        } catch(err) {
+        } catch (err) {
             throw err;
         }
     }
@@ -94,13 +94,19 @@ class MoreBeatmapInfo {
         }
     }
 
-    mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
+    async mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
         try {
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
             this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
+            this.tryMountPPToBeatmapBlock(beatmapBlock, lastDiffData.id);
         } catch (error) {
             throw new Error(`Failed to mount info beatmapBlock: ${error}`);
         }
+    }
+
+    async tryMountPPToBeatmapBlock(beatmapBlock, beatmapId) {
+        const beatmapPPData = await OsuApi.tryGetCachedBeatmapPP(beatmapId);
+        if (beatmapPPData) DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPPData.pp);
     }
 
     updateBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {

@@ -2,7 +2,6 @@ import axios from "../AxiosWrapper";
 import cache from "./CacheService";
 import log from "@/js/logger.js";
 
-//TODO: Caching a beatmap structure
 //TODO: Solve problem with beatmap structure sending to server every time even if server just have a result in cache
 //TODO: Validate beatmap pp data
 
@@ -30,7 +29,7 @@ class IntermediateOsuApiService {
                 throw new Error(`Undefined array or empty`);
             }
 
-            const { result, unfoundedIds } = this.#getExistMapsetsFromCacheByIds(mapsetsIds);
+            const {result, unfoundedIds} = this.#getExistMapsetsFromCacheByIds(mapsetsIds);
 
             if (unfoundedIds.length > 0) {
                 const fetchedBeatmapsets = await this.#fetchMapsetsData(unfoundedIds);
@@ -45,8 +44,8 @@ class IntermediateOsuApiService {
             }
 
             return result;
-        } catch(err) {
-            throw new Error("Failed to get mapset data", { cause: err });
+        } catch (err) {
+            throw new Error("Failed to get mapset data", {cause: err});
         }
     }
 
@@ -95,16 +94,9 @@ class IntermediateOsuApiService {
     }
 
     async getBeatmapPP(beatmapId) {
-        let filteredBeatmapCalcData;
-        try {
-            const serverCachedBeatmapData = await this.tryGetCachedBeatmapPP(beatmapId);
-            filteredBeatmapCalcData = this.#filterCalculatedBeatmapData(serverCachedBeatmapData);
-            console.log('Server cached beatmap data received from the cache', 'dev');
-        } catch (error) {
-            const beatmapStructure = await this.#getBeatmapStructureAsText(beatmapId);
-            filteredBeatmapCalcData = await this.#getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
-            log(filteredBeatmapCalcData, 'debug');
-        }
+        const beatmapStructure = await this.#getBeatmapStructureAsText(beatmapId);
+        const filteredBeatmapCalcData = await this.#getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
+        log(filteredBeatmapCalcData, 'debug');
 
         return filteredBeatmapCalcData;
     }
@@ -115,9 +107,11 @@ class IntermediateOsuApiService {
             if (!response.data || Object.keys(response.data).length === 0) {
                 throw new Error(`Cached beatmap data is empty`);
             }
-            return response.data;
+            const filteredBeatmapData = this.#filterCalculatedBeatmapData(response.data);
+            cache.setBeatmap(beatmapId, filteredBeatmapData);
+            return filteredBeatmapData;
         } catch (error) {
-            throw new Error(`Failed to get cached beatmap data: ${error.message}`);
+            return null;
         }
     }
 
@@ -165,7 +159,7 @@ class IntermediateOsuApiService {
 
             return result;
         } catch (error) {
-            throw new Error('Failed to fetch mapset data', {cause : error});
+            throw new Error('Failed to fetch mapset data', {cause: error});
         }
     }
 
@@ -189,7 +183,7 @@ class IntermediateOsuApiService {
             let beatmapsetDataFiltered = {...this.#filterObject(beatmapsetData, ['bpm']), beatmaps};
             beatmapsetDataFiltered.date = dateForCache;
             return beatmapsetDataFiltered;
-        } catch(err) {
+        } catch (err) {
             log(`Failed to process beatmapsetData for ${beatmapsetId}: ${err.message}`, 'dev', 'error');
         }
     }
@@ -285,7 +279,7 @@ class IntermediateOsuApiService {
                 .map(([key, value]) => [key, round(value)])
         );
 
-        const filteredData = { difficulty, pp: round(fullCalcObject.pp) };
+        const filteredData = {difficulty, pp: round(fullCalcObject.pp)};
         filteredData.date = new Date().toISOString();
         log(filteredData, 'full');
         return filteredData;
