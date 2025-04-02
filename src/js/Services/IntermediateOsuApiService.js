@@ -2,15 +2,11 @@ import axios from "../AxiosWrapper";
 import cache from "./CacheService";
 import log from "@/js/logger.js";
 
-//TODO: Solve problem with beatmap structure sending to server every time even if server just have a result in cache
-//TODO: Validate beatmap pp data
-
 /**
  * Class for interacting with the osu! intermediate API to fetch and cache mapset and beatmap data.
  * The class isolates API interactions and manages data caching internally.
  * Main methods:
  * - getMapsetsData(mapsetsId): Retrieves data for many mapsets at once.
- * - getMapsetData(mapsetId): Retrieves mapset data.
  * - getCalculatedBeatmapData(beatmapId): Retrieves full beatmap data with PP.
  */
 
@@ -45,31 +41,8 @@ class IntermediateOsuApiService {
 
             return result;
         } catch (err) {
-            throw new Error("Failed to get mapset data", {cause: err});
+            throw new Error(`Failed to get mapset data\n${err.message}`);
         }
-    }
-
-    /**
-     * Retrieves and caches filtered mapset data.
-     * If the mapset data is already cached, it is returned from the cache.
-     * Otherwise, it fetches the data from the intermediate server and caches it for future use.
-     *
-     * @param {string} mapsetId - The unique identifier of the mapset.
-     * @returns {Promise<Object>} - The filtered mapset data.
-     */
-    async getMapsetData(mapsetId) {
-        const beatmapsetDataFromCache = cache.getMapset(mapsetId);
-        if (beatmapsetDataFromCache) {
-            log('Mapset data received from the cache', 'debug');
-            return beatmapsetDataFromCache;
-        }
-
-        const beatmapsetDataFiltered = await this.#fetchBeatmapsetData(mapsetId);
-        if (beatmapsetDataFiltered) {
-            cache.setMapset(mapsetId, beatmapsetDataFiltered);
-        }
-
-        return beatmapsetDataFiltered;
     }
 
     /**
@@ -87,13 +60,25 @@ class IntermediateOsuApiService {
         if (cachedBeatmapPP) {
             return cachedBeatmapPP;
         } else {
-            const beatmapData = await this.getBeatmapPP(beatmapId);
+            const beatmapData = await this.#fetchCalculatedBeatmapData(beatmapId);
             cache.setBeatmap(beatmapId, beatmapData);
             return beatmapData;
         }
     }
 
-    async getBeatmapPP(beatmapId) {
+    /**
+     * Sends a request to the server to calculate beatmap data including PP.
+     * To do this, it downloads the beatmap structure via the osu API
+     * and sends it to the server for calculation.
+     * The structure of the beatmap can be quite large, so this method is only used after ensuring
+     * that the server does not already have this calculation data cached
+     * via the tryGetCachedBeatmapPP method.
+     * Otherwise, this would create an unnecessary load.
+     *
+     * @param {string|number} beatmapId
+     * @returns {Promise<Object>}
+     */
+    async #fetchCalculatedBeatmapData(beatmapId) {
         const beatmapStructure = await this.#getBeatmapStructureAsText(beatmapId);
         const filteredBeatmapCalcData = await this.#getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
         log(filteredBeatmapCalcData, 'debug');
@@ -101,6 +86,13 @@ class IntermediateOsuApiService {
         return filteredBeatmapCalcData;
     }
 
+    /**
+     * Attempts to retrieve the PP data of a beatmap from the server cache.
+     * If the server already has it cached, we will receive it; otherwise, we will get null.
+     *
+     * @param {string|number} beatmapId
+     * @returns {Promise<{difficulty: {[p: string]: *}, pp: number}|null>}
+     */
     async tryGetCachedBeatmapPP(beatmapId) {
         try {
             const response = await axios.get(`/api/cachedBeatmapData/${beatmapId}`);
@@ -189,21 +181,6 @@ class IntermediateOsuApiService {
     }
 
     /**
-     * Fetches beatmapset data from server and filter it, leaving only the required fields.
-     *
-     * @param {string} mapsetId - The unique identifier of the mapset.
-     * @returns {Promise<Object>} - The filtered mapset data.
-     */
-    async #fetchBeatmapsetData(mapsetId) {
-        try {
-            const response = await axios.get(`/api/MapsetData/${mapsetId}`);
-            return this.#processBeatmapsetData(mapsetId, response.data);
-        } catch (error) {
-            return null;
-        }
-    }
-
-    /**
      * Fetches beatmap calculated data by rosu-pp.js from server by beatmap structure text
      * and filter it, leaving only the required fields.
      *
@@ -270,8 +247,13 @@ class IntermediateOsuApiService {
      *
      * @param {Object} fullCalcObject - The full beatmap calculation object containing all the data.
      * @returns {Object} filteredData - The filtered object containing only the relevant fields.
+     * @throws {Error} If the input object does not have the required `pp` field.
      */
     #filterCalculatedBeatmapData(fullCalcObject) {
+        if (!fullCalcObject || !fullCalcObject.pp) {
+            throw new Error("Invalid input: 'pp' field is required");
+        }
+
         const round = (value) => (value != null ? parseFloat(value.toFixed(3)) : undefined);
 
         const difficulty = Object.fromEntries(

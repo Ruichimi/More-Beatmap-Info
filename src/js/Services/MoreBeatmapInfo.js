@@ -5,8 +5,6 @@ import log from "@/js/logger.js";
 
 const OsuApi = new OsuApiService;
 
-//TODO: Оптимизировать обращения к DOM
-
 class MoreBeatmapInfo {
     constructor(observer) {
         this.domObserver = observer;
@@ -59,7 +57,7 @@ class MoreBeatmapInfo {
     async setInfoToBeatmapBlocks(beatmapBlocks) {
         try {
             if (!Array.isArray(beatmapBlocks) || beatmapBlocks.length === 0) {
-                return;
+                throw new Error(`Invalid beatmapBlocks array`);
             }
 
             let mapsetsIds = [];
@@ -78,26 +76,15 @@ class MoreBeatmapInfo {
                     this.mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData[mapsetId]);
                 }
             }
-        } catch (err) {
-            log(err, 'prod', 'error');
-            //throw new Error('Failed to set mount info in beatmap block', {cause: err});
-        }
-    }
-
-    async setInfoToBeatmapBlock(beatmapBlock) {
-        try {
-            const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
-            const mapsetData = await OsuApi.getMapsetData(mapsetId);
-            this.mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData);
         } catch (error) {
-            log(`Failed to process beatmapBlock: ${error}`, 'prod', 'error');
+            throw new Error(`Failed to set info to beatmap blocks: ${error.message}`);
         }
     }
 
     async mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
         try {
             const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
-            this.updateBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
+            this.processBeatmapBlock(beatmapBlock, mapsetId, lastDiffData);
             this.tryMountPPToBeatmapBlock(beatmapBlock, lastDiffData.id);
         } catch (error) {
             throw new Error(`Failed to mount info beatmapBlock: ${error}`);
@@ -109,8 +96,8 @@ class MoreBeatmapInfo {
         if (beatmapPPData) DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPPData.pp);
     }
 
-    updateBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
-        if (!beatmapData) {
+    processBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
+        if (!beatmapData || !beatmapData.id) {
             return this.handleMissingBeatmapData(beatmapBlock, mapsetId);
         }
 
@@ -125,6 +112,11 @@ class MoreBeatmapInfo {
         this.setBeatmapPPReceivingToBlock(beatmapBlock, beatmapData.id);
     }
 
+    /**
+     * This method can be triggered in case there is an error retrieving mapsets data from the server.
+     * It will add a retry button inside the beatmap block, where the information was supposed to be displayed.
+     */
+
     handleMissingBeatmapData(beatmapBlock, mapsetId) {
         beatmapBlock.setAttribute('mapsetId', mapsetId);
         const failedInfoBlock = document.createElement('div');
@@ -136,7 +128,7 @@ class MoreBeatmapInfo {
 
         retryGetInfoBtn.addEventListener('click', async () => {
             try {
-                await this.setInfoToBeatmapBlock(beatmapBlock);
+                await this.setInfoToBeatmapBlocks(beatmapBlock);
                 failedInfoBlock.remove();
             } catch (error) {
                 log(`Error processing beatmap block: ${error}`, 'dev', 'error');
@@ -245,21 +237,13 @@ class MoreBeatmapInfo {
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
         const beatmapInfo = cache.getBeatmapInfoByIdFromMapsetsCache(numericBeatmapId);
         if (!beatmapInfo) {
-            this.handleMissingBeatmapInfo(numericBeatmapId);
-            return;
+            return this.handleMissingBeatmapInfo(numericBeatmapId);
         }
         const beatmapBlock = DomHelper.getMapsetBlockById(beatmapInfo.mapsetId);
         this.updateBeatmapInfoDOM(beatmapInfo.map, beatmapBlock);
         this.setBeatmapPPReceivingToBlock(beatmapBlock, beatmapId);
         DomHelper.updateBeatmapIdBtn(beatmapId, beatmapInfo.mapsetId);
     }
-
-    // async updatePPBlockForNewBeatmapId(mapsetId, beatmapId) {
-    //     console.log(`updating PP for beatmap set: ${mapsetId} to beatmap: ${beatmapId}`);
-    //     const beatmapBlock = DomHelper.getMapsetBlockById(mapsetId);
-    //     const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
-    //     DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPP);
-    // }
 
     convertToNumericBeatmapId(beatmapId) {
         const numericBeatmapId = parseInt(beatmapId, 10);
