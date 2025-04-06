@@ -1,0 +1,17 @@
+# Note about data processing in the class /src/js/Services/MoreBeatmapInfo:
+
+There are cases when the map block in the DOM is loaded before the tracking starts,
+and at the same time, the lower blocks on the page may still be loaded by scrolling
+down as new blocks that we are tracking. In this case, the code to retrieve information will run twice.
+The initially loaded block may no longer have a reference in the DOM and will
+become useless due to the mechanics of JavaScript or the osu website.
+
+The issue can arise if these blocks are passed during a server request for data, and the previous
+code interrupts it with the mechanism that blocks repeated requests in the project.
+This means the reprocessing will fail, and the first one will not have a reference to the DOM element.
+
+To prevent this, we set the id in the mapset block in setInfoToBeatmapBlocks method,
+before making the server request. In the processBeatmapBlock method, we check if the block
+still has a reference in the DOM using the contains method.
+If not, we get the updated block via the id.
+This way, the first processing will succeed even if the reference to the DOM is lost.

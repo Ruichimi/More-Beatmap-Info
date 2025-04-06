@@ -12,43 +12,32 @@ class MoreBeatmapInfo {
 
     initialize() {
         try {
-            DomHelper.catchBeatmapsFromDOM()
-                .then(beatmapsRows => {
-                    log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
-                    if (beatmapsRows) {
-                        this.setLastDiffInfoToBeatmapsRows(beatmapsRows);
-                    }
-                    this.domObserver.startObserving(
-                        '.beatmapsets__items',
-                        (addedNodes) => this.setLastDiffInfoToBeatmapsRows(addedNodes),
-                        {childList: true, subtree: false}
-                    );
+            log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
+            this.domObserver.startObserving(
+                '.beatmapsets__items',
+                (addedNodes) => this.setLastDiffInfoToBeatmapsRows(addedNodes),
+                {childList: true, subtree: false}
+            );
 
-                    this.domObserver.observeDynamicElement(
-                        '.beatmaps-popup__group',
-                        (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
-                    );
-                })
-                .catch(error => {
-                    log(`Failed to catch beatmaps from DOM: ${error}`, 'prod', 'error');
-                });
+            this.domObserver.observeDynamicElement(
+                '.beatmaps-popup__group',
+                (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
+            );
         } catch (err) {
             log(err, 'dev', 'error');
             //throw new Error(`Failed to initialize More Beatmap Info`, {cause: err});
         }
     }
 
-    processPopupGroupChanges(beatmapDiffsGroup) {
-        log(beatmapDiffsGroup, 'dev');
-        DomHelper.addChangeInfoButtonsToMapsetDiffsList(beatmapDiffsGroup, (beatmapId) => {
-            this.handleChangeInfoDiffClick(beatmapId);
-        });
-    }
-
     setLastDiffInfoToBeatmapsRows(beatmapsBlocksRows) {
+        DomHelper.setBeatmapsContainerIfNeeded();
         try {
             const beatmapsBlocks = this.flattenBeatmapRows(beatmapsBlocksRows);
-            this.setInfoToBeatmapBlocks(beatmapsBlocks);
+
+            for (let i = 0; i < beatmapsBlocks.length; i += 2) {
+                const chunk = beatmapsBlocks.slice(i, i + 2);
+                this.setInfoToBeatmapBlocks(chunk);
+            }
         } catch (err) {
             throw err;
         }
@@ -57,28 +46,44 @@ class MoreBeatmapInfo {
     async setInfoToBeatmapBlocks(beatmapBlocks) {
         try {
             if (!Array.isArray(beatmapBlocks) || beatmapBlocks.length === 0) {
-                throw new Error(`Invalid beatmapBlocks array`);
+                throw new Error(`Invalid beatmapBlocks array "${beatmapBlocks}"`);
             }
 
-            let mapsetsIds = [];
-            let beatmapBlockMap = new Map();
-
-            for (const beatmapBlock of beatmapBlocks) {
-                const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
-                mapsetsIds.push(mapsetId);
-                beatmapBlockMap.set(beatmapBlock, mapsetId);
-            }
-
+            const { mapsetsIds, beatmapBlockMap } = this.prepareBeatmapBlocksForProcess(beatmapBlocks);
             const mapsetData = await OsuApi.getMapsetsData(mapsetsIds);
 
-            for (const [beatmapBlock, mapsetId] of beatmapBlockMap) {
-                if (mapsetData[mapsetId]) {
-                    this.mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData[mapsetId]);
-                }
-            }
+            this.applyMapsetDataToBlocks(beatmapBlockMap, mapsetData);
         } catch (error) {
             throw new Error(`Failed to set info to beatmap blocks: ${error.message}`);
         }
+    }
+
+    prepareBeatmapBlocksForProcess(beatmapBlocks) {
+        const mapsetsIds = [];
+        const beatmapBlockMap = new Map();
+
+        for (const beatmapBlock of beatmapBlocks) {
+            const mapsetId = this.preProcessBeatmapBlock(beatmapBlock);
+            mapsetsIds.push(mapsetId);
+            beatmapBlockMap.set(beatmapBlock, mapsetId);
+        }
+
+        return { mapsetsIds, beatmapBlockMap };
+    }
+
+    applyMapsetDataToBlocks(beatmapBlockMap, mapsetData) {
+        for (const [beatmapBlock, mapsetId] of beatmapBlockMap) {
+            if (mapsetData[mapsetId]) {
+                this.mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData[mapsetId]);
+            }
+        }
+    }
+
+    preProcessBeatmapBlock(beatmapBlock) {
+        const mapsetId = DomHelper.getMapsetIdFromBlock(beatmapBlock);
+        beatmapBlock.setAttribute('mapsetId', mapsetId);
+
+        return mapsetId;
     }
 
     async mountInfoToBeatmapBlock(beatmapBlock, mapsetId, mapsetData) {
@@ -91,25 +96,44 @@ class MoreBeatmapInfo {
         }
     }
 
-    async tryMountPPToBeatmapBlock(beatmapBlock, beatmapId) {
-        const beatmapPPData = await OsuApi.tryGetCachedBeatmapPP(beatmapId);
-        if (beatmapPPData) DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPPData.pp);
-    }
-
     processBeatmapBlock(beatmapBlock, mapsetId, beatmapData) {
         if (!beatmapData || !beatmapData.id) {
             return this.handleMissingBeatmapData(beatmapBlock, mapsetId);
         }
 
-        beatmapBlock.setAttribute('mapsetId', mapsetId);
-        beatmapBlock.setAttribute('beatmapId', beatmapData.id);
-        const mapDiffInfoString = this.createBeatmapParamsAsString(beatmapData);
-
-        DomHelper.mountBeatmapInfoToBlock(beatmapBlock, mapsetId, mapDiffInfoString);
-        if (beatmapData.mode === 'osu') {
-            DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, (block) => this.handleDeepInfoBtnClick(block));
+        // Mechanism for handling the absence of a reference to the DOM element
+        // due to a complex issue with element loading.
+        // For more details, refer to notes.txt under "Note about data processing in the class"
+        if (!document.contains(beatmapBlock)) {
+            beatmapBlock = document.querySelector(`[mapsetId="${mapsetId}"]`);
+            log(`Переполучаем ${mapsetId}`, 'debug');
         }
-        this.setBeatmapPPReceivingToBlock(beatmapBlock, beatmapData.id);
+
+        if (beatmapBlock) {
+            beatmapBlock.setAttribute('mapsetId', mapsetId);
+            beatmapBlock.setAttribute('beatmapId', beatmapData.id);
+            const mapDiffInfoString = this.createBeatmapParamsAsString(beatmapData);
+
+            DomHelper.mountBeatmapInfoToBlock(beatmapBlock, mapsetId, mapDiffInfoString);
+            if (beatmapData.mode === 'osu') {
+                DomHelper.addDeepInfoButtonToBeatmap(beatmapBlock, (block) => this.handleDeepInfoBtnClick(block));
+            }
+            this.setBeatmapPPReceivingToBlock(beatmapBlock, beatmapData.id);
+        } else {
+            log(`Не удалось найти beatmapBlock в DOM ${mapsetId}`, 'debug', 'warn');
+        }
+    }
+
+    async tryMountPPToBeatmapBlock(beatmapBlock, beatmapId) {
+        const beatmapPPData = await OsuApi.tryGetCachedBeatmapPP(beatmapId);
+        if (beatmapPPData) DomHelper.mountPPForBeatmapBlock(beatmapBlock, beatmapPPData.pp);
+    }
+
+    processPopupGroupChanges(beatmapDiffsGroup) {
+        log(beatmapDiffsGroup, 'debug');
+        DomHelper.addChangeInfoButtonsToMapsetDiffsList(beatmapDiffsGroup, (beatmapId) => {
+            this.handleChangeInfoDiffClick(beatmapId);
+        });
     }
 
     /**
@@ -179,7 +203,6 @@ class MoreBeatmapInfo {
     }
 
     createBeatmapDifficultyParamsString(beatmapData) {
-        console.log(beatmapData);
         const {
             aim, speed, nCircles, nSliders, speedNoteCount, flashlight
         } = beatmapData;
@@ -232,9 +255,8 @@ class MoreBeatmapInfo {
      */
 
     handleChangeInfoDiffClick(beatmapId) {
-        if (this.isBeatmapInfoAlreadyDisplayed(beatmapId)) return;
-
         const numericBeatmapId = this.convertToNumericBeatmapId(beatmapId);
+        if (this.isBeatmapInfoAlreadyDisplayed(numericBeatmapId)) return;
         const beatmapInfo = cache.getBeatmapInfoByIdFromMapsetsCache(numericBeatmapId);
         if (!beatmapInfo) {
             return this.handleMissingBeatmapInfo(numericBeatmapId);

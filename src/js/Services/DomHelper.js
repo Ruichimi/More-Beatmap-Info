@@ -2,9 +2,20 @@ import log from "@/js/logger.js";
 
 class DomHelper {
     constructor() {
-        this.attemptsToCatchMaps = 6;
         this.createdUniqueElementId = null;
-        this.beatmapsContainer = null;
+        this.beatmapsContainer = document.body;
+        this.isBeatmapsContainerInitialized = false;
+    }
+
+    setBeatmapsContainerIfNeeded() {
+        if (!this.isBeatmapsContainerInitialized) {
+            const beatmapsContainer = document.querySelector('.beatmapsets__items');
+
+            if (beatmapsContainer) {
+                this.beatmapsContainer = beatmapsContainer;
+                this.isBeatmapsContainerInitialized = true;
+            }
+        }
     }
 
     addUniqueElementToDOM(id) {
@@ -46,38 +57,6 @@ class DomHelper {
 
         this.removeUniqueElementFromDOM();
         log('The DOM was cleared', 'dev');
-    }
-
-    catchBeatmapsFromDOM() {
-        let attemptsToCatchMaps = this.attemptsToCatchMaps;
-        log('The func catchMapsFromDom called', 'debug');
-        return new Promise((resolve, reject) => {
-            const attemptToCatchMaps = () => {
-                const beatmapsRows = document.getElementsByClassName('beatmapsets__items-row');
-                if (beatmapsRows.length > 0) {
-                    log('The beatmaps has caught', 'dev');
-                    this.beatmapsContainer = document.querySelector('.beatmapsets__items');
-                    resolve(beatmapsRows);
-                } else if (attemptsToCatchMaps > 1) {
-                    log('Failed to beatmaps maps from DOM, retrying...', 'dev', 'warn');
-                    attemptsToCatchMaps--;
-                    setTimeout(() => {
-                        attemptToCatchMaps();
-                    }, 200);
-                } else if (attemptsToCatchMaps === 1) {
-                    attemptsToCatchMaps--;
-                    setTimeout(() => {
-                        console.log('The last attempt to catch beatmaps...', 'dev');
-                        attemptToCatchMaps();
-                    }, 2500);
-                }
-                else {
-                    reject(`Failed to catch beatmaps after ${this.attemptsToCatchMaps} attempts`);
-                }
-            };
-
-            attemptToCatchMaps();
-        });
     }
 
     mountBeatmapInfoToBlock(beatmapBlock, mapsetId, beatmapInfo) {
@@ -174,7 +153,7 @@ class DomHelper {
      * When creating the tooltip, an event listener is registered that, upon clicking anywhere on the site,
      * will hide the tooltip and remove this event listener. This could confuse the developer if the button
      * that triggers the tooltip is clicked again, as the script will remove the tooltip due to the click
-     * event registered on the DOM(I --fu***d-- debugged because of this for an hour >_<)
+     * event registered on the DOM (I --fu***d-- debugged because of this for an hour >_<)
      */
     displayTooltip(beatmapDeepParams, beatmapId, element) {
         const tooltip = document.createElement('div');
@@ -261,7 +240,6 @@ class DomHelper {
             diffNameBlock.parentNode.replaceChild(diffNameAsLink, diffNameBlock);
         }
     }
-
 
     getMapsetBlockById(mapsetId) {
         return this.beatmapsContainer.querySelector(`.beatmapsets__item[mapsetId="${mapsetId}"]`);

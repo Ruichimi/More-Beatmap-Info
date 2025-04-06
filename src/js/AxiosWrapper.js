@@ -15,7 +15,7 @@ import log from "@/js/logger.js";
 
 const instance = axios.create({
     baseURL: 'http://localhost:3000',
-    timeout: 12000,
+    timeout: 15000,
 });
 
 let reRequestTokenDelay = 4000; //4 seconds

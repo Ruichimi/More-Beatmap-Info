@@ -21,8 +21,8 @@ class IntermediateOsuApiService {
      */
     async getMapsetsData(mapsetsIds = []) {
         try {
-            if (!Array.isArray(mapsetsIds) || !(mapsetsIds.length > 1)) {
-                throw new Error(`Undefined array or empty`);
+            if (!Array.isArray(mapsetsIds) || !(mapsetsIds.length >= 1)) {
+                throw new Error(`Undefined array or empty "${mapsetsIds}"`);
             }
 
             const {result, unfoundedIds} = this.#getExistMapsetsFromCacheByIds(mapsetsIds);
@@ -144,14 +144,13 @@ class IntermediateOsuApiService {
             const idsString = mapsetsIds.join(',');
 
             const response = await axios.get(`/api/MapsetsData?mapsetsIds=${idsString}`);
-
             for (const [beatmapsetId, beatmapsetData] of Object.entries(response.data)) {
                 result[beatmapsetId] = this.#processBeatmapsetData(beatmapsetId, beatmapsetData);
             }
 
             return result;
         } catch (error) {
-            throw new Error('Failed to fetch mapset data', {cause: error});
+            throw new Error(`Failed to fetch mapset data ${error.message}`);
         }
     }
 

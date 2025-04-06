@@ -30,6 +30,12 @@ class DOMObserver {
         this.observers.set(targetSelector, observer);
 
         log(`DOMObserver: Started observing "${targetSelector}".`, 'dev');
+
+        //Processing of data that already has been loaded in the DOM.
+        if (options.childList && targetNode.children.length > 0) {
+            const existingNodes = Array.from(targetNode.children);
+            callback(existingNodes, targetSelector);
+        }
     }
 
     observeDynamicElement(classToCheck, callback, options = { childList: true, subtree: true }) {
