@@ -41,7 +41,8 @@ class IntermediateOsuApiService {
 
             return result;
         } catch (err) {
-            throw new Error(`Failed to get mapset data\n${err.message}`);
+            log(`Failed to get mapset data\n${err.message}`, 'dev', 'error');
+            return null;
         }
     }
 

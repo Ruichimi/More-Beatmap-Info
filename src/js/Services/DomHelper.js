@@ -46,7 +46,7 @@ class DomHelper {
         const elementsToRemove = [
             ...this.beatmapsContainer.querySelectorAll('.more-beatmap-info'),
             ...this.beatmapsContainer.querySelectorAll('.more-diff-info-btn'),
-            //...this.beatmapsContainer.querySelectorAll('.change-diff-info-button') // Закомментировано, так как это может быть ресурсоемко
+            ...this.beatmapsContainer.querySelectorAll('.change-diff-info-button')
         ];
 
         elementsToRemove.forEach(element => {
@@ -59,12 +59,11 @@ class DomHelper {
         log('The DOM was cleared', 'dev');
     }
 
-    mountBeatmapInfoToBlock(beatmapBlock, mapsetId, beatmapInfo) {
+    mountBeatmapInfoToBlock(beatmapBlock, beatmapInfo) {
         let infoBlock = beatmapBlock.querySelector('.more-beatmap-info-block');
         if (!infoBlock) {
             infoBlock = document.createElement('div');
             infoBlock.classList.add('more-beatmap-info-block');
-            infoBlock.id = mapsetId;
 
             const statsRowBlock = beatmapBlock.querySelector('.beatmapset-panel__info-row--stats');
             statsRowBlock.parentNode.insertBefore(infoBlock, statsRowBlock.nextSibling);
@@ -80,8 +79,6 @@ class DomHelper {
 
         return infoBlock;
     }
-
-
 
     getMapsetIdFromBlock(beatmapBlock) {
         const href = beatmapBlock.querySelector('a').getAttribute('href');
@@ -140,6 +137,7 @@ class DomHelper {
     }
 
     mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
+        console.log(beatmapPP);
         const ppBlock = beatmapBlock.querySelector('.pp-block');
         const roundedPP = Math.round(beatmapPP);
         ppBlock.innerHTML = '';
@@ -183,6 +181,7 @@ class DomHelper {
             const beatmapId = diffItemDiv.getAttribute('href') ? diffItemDiv.getAttribute('href').split('/').pop() : 'Unknown';
             const beatmapListItem = diffItemDiv.querySelector('.beatmap-list-item');
             if (beatmapListItem) {
+                beatmapListItem.querySelector('.change-diff-info-button')?.remove();
                 const changeDiffInfoBtn = this.createChangeDiffInfoBtn(beatmapId);
                 beatmapListItem.appendChild(changeDiffInfoBtn);
                 this.convertDiffNameDivToLink(beatmapListItem, diffItemDiv);
@@ -246,9 +245,9 @@ class DomHelper {
     }
 
     getMapsetBlockByCurrentDiffDisplayed(beatmapId) {
-        const mapsetBlock = this.beatmapsContainer.querySelector(`.beatmapsets__item[beatmapId="${beatmapId}"]`);
+        const mapsetBlock = this.beatmapsContainer.querySelector(`[beatmapId="${beatmapId}`);
         if (!mapsetBlock) {
-            log(`Mapset block not found by beatmap id: ${beatmapId}`, 'dev', 'warning');
+            log(`Mapset block not found by beatmap id: ${beatmapId}`, 'debug');
             return null;
         }
         return mapsetBlock;
