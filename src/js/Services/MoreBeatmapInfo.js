@@ -36,14 +36,19 @@ class MoreBeatmapInfo {
             const {mapsetsIds, beatmapBlockMap} =
                 BeatmapProcessor.prepareBeatmapBlocksForProcess(chunk);
 
-            const mapsetsData = await OsuApi.getMapsetsData(mapsetsIds);
-            console.log(mapsetsData);
-            this.applyMapsetDataToBlocks(beatmapBlockMap, mapsetsData);
+            await OsuApi.getMapsetsData(mapsetsIds, (beatmapData) => {
+                let beatmapMap = new Map().set(Object.keys(beatmapData)[0],
+                    beatmapBlockMap.get(Object.keys(beatmapData)[0]));
+                this.applyMapsetDataToBlocks(beatmapMap, beatmapData);
+            }, (failedBeatmapId) => {
+                const uncaughtBeatmapBlock = beatmapBlockMap.get(failedBeatmapId);
+                this.handleMissingBeatmapData(uncaughtBeatmapBlock);
+            });
         });
     }
 
     applyMapsetDataToBlocks(beatmapBlockMap, mapsetsData) {
-        for (const [beatmapBlock, mapsetId] of beatmapBlockMap) {
+        for (const [mapsetId, beatmapBlock] of beatmapBlockMap) {
             if (mapsetsData[mapsetId]) {
                 const lastDiffData = this.getLastMapsetDiffInfo(mapsetsData[mapsetId]);
                 if (lastDiffData && lastDiffData.id) {
@@ -79,8 +84,6 @@ class MoreBeatmapInfo {
      */
 
     handleMissingBeatmapData(beatmapBlock) {
-        console.log('вызванна handleMissingBeatmapData');
-        console.log(beatmapBlock);
         BeatmapProcessor.setBeatmapBlockFailed(beatmapBlock, async () => {
             try {
                 await this.processBeatmapsBlocks(beatmapBlock, true);
@@ -101,7 +104,6 @@ class MoreBeatmapInfo {
             try {
                 const beatmapCalcData = await this.setPPToBeatmapBlockAndReturnData(beatmapBlock, beatmapId);
                 log(beatmapCalcData, 'debug');
-                console.log(beatmapCalcData.difficulty);
                 const deepBeatmapDataAsString = this.createBeatmapDifficultyParamsString(beatmapCalcData.difficulty);
                 DomHelper.displayTooltip(deepBeatmapDataAsString, beatmapId, beatmapBlock);
             } catch (error) {
@@ -157,7 +159,6 @@ class MoreBeatmapInfo {
             return this.handleMissingBeatmapInfo(numericBeatmapId);
         }
         const beatmapBlock = DomHelper.getMapsetBlockById(beatmapInfo.mapsetId);
-        console.log(beatmapInfo);
         BeatmapProcessor.updateBeatmapInfo(beatmapBlock, beatmapInfo.map);
         BeatmapProcessor.setPPToBeatmapBlock(beatmapBlock, beatmapId,
             (beatmapBlock) => this.setPPToBeatmapBlockAndReturnData(beatmapBlock, beatmapId)

@@ -137,7 +137,6 @@ class DomHelper {
     }
 
     mountPPForBeatmapBlock(beatmapBlock, beatmapPP) {
-        console.log(beatmapPP);
         const ppBlock = beatmapBlock.querySelector('.pp-block');
         const roundedPP = Math.round(beatmapPP);
         ppBlock.innerHTML = '';

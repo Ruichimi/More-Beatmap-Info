@@ -37,7 +37,7 @@ class BeatmapBlockProcessor {
         for (const beatmapBlock of beatmapBlocks) {
             const mapsetId = this.preProcessBeatmapBlock(beatmapBlock);
             mapsetsIds.push(mapsetId);
-            beatmapBlockMap.set(beatmapBlock, mapsetId);
+            beatmapBlockMap.set(mapsetId, beatmapBlock);
         }
 
         return { mapsetsIds, beatmapBlockMap };

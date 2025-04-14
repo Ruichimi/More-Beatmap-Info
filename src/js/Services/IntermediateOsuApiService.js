@@ -19,30 +19,55 @@ class IntermediateOsuApiService {
      * @returns {Object} - An object containing the mapset data for the requested IDs.
      * @throws {Error} - If the input is not a valid array or if fetching mapset data fails.
      */
-    async getMapsetsData(mapsetsIds = []) {
+    async getMapsetsData(mapsetsIds = [], cachedBeatmapCallback, failedBeatmapCallback) {
+        if (!Array.isArray(mapsetsIds) || !(mapsetsIds.length >= 1)) {
+            throw new Error(`Undefined array or empty "${mapsetsIds}"`);
+        }
+        const {result, unfoundedIds} = this.#getExistMapsetsFromCacheByIds(mapsetsIds);
+        const idsFromCache = [];
+        Object.entries(result).forEach(([key, value]) => {
+            idsFromCache.push(key);
+            cachedBeatmapCallback({[key]: value});
+        });
+
         try {
-            if (!Array.isArray(mapsetsIds) || !(mapsetsIds.length >= 1)) {
-                throw new Error(`Undefined array or empty "${mapsetsIds}"`);
+            if (unfoundedIds.length > 0) {
+                const dataFromSever = await this.getMapsetsDataFromSever(unfoundedIds);
+                let caughtIds = [];
+                Object.entries(dataFromSever).forEach(([key, value]) => {
+                    caughtIds.push(key);
+                    cachedBeatmapCallback({[key]: value});
+                });
+
+                mapsetsIds.forEach(id => {
+                    if (!caughtIds.includes(id) && !idsFromCache.includes(id)) {
+                        failedBeatmapCallback(id);
+                    }
+                });
             }
 
-            const {result, unfoundedIds} = this.#getExistMapsetsFromCacheByIds(mapsetsIds);
+            return true;
+        } catch (err) {
+            throw new Error(`Failed to get mapset data\n${err.message}`, 'dev', 'error');
+        }
+    }
 
-            if (unfoundedIds.length > 0) {
-                const fetchedBeatmapsets = await this.#fetchMapsetsData(unfoundedIds);
-                Object.assign(result, fetchedBeatmapsets);
+    async getMapsetsDataFromSever(idsToFetch) {
+        try {
+            const result = {};
+            const fetchedBeatmapsets = await this.#fetchMapsetsData(idsToFetch);
+            Object.assign(result, fetchedBeatmapsets);
 
-                for (const mapsetId of unfoundedIds) {
-                    const fetchedData = fetchedBeatmapsets[mapsetId];
-                    if (fetchedData) {
-                        cache.setMapset(mapsetId, fetchedData);
-                    }
+            for (const mapsetId of idsToFetch) {
+                const fetchedData = fetchedBeatmapsets[mapsetId];
+                if (fetchedData) {
+                    cache.setMapset(mapsetId, fetchedData);
                 }
             }
 
             return result;
-        } catch (err) {
-            log(`Failed to get mapset data\n${err.message}`, 'dev', 'error');
-            return null;
+        } catch {
+            return {};
         }
     }
 
@@ -193,7 +218,6 @@ class IntermediateOsuApiService {
             const response = await axios.post(`/api/BeatmapPP/${beatmapId}`, {
                 beatmap: beatmapStructure,
             });
-            console.log(response.data);
             log(response.data, 'debug');
             return this.#filterCalculatedBeatmapData(response.data);
         } catch (error) {
