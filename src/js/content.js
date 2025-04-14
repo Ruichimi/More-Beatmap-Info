@@ -1,10 +1,14 @@
 import log from "@/js/logger.js";
+import devTools from "@/js/devTools";
 import DOMObserver from "./Services/DOMObserver";
 import MoreBeatmapInfo from "./Services/MoreBeatmapInfo";
 import DomHelper from "./Services/DomHelper";
 
 const observer = new DOMObserver();
 const MBI = new MoreBeatmapInfo(observer);
+const mountDevToolsDOM = true;
+
+if (mountDevToolsDOM) devTools();
 
 window.onload = function () {
     if (isBeatmapSetsPage()) {
