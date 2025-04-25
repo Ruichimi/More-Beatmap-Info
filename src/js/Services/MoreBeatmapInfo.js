@@ -33,42 +33,111 @@ class MoreBeatmapInfo {
     processBeatmapsBlocks(beatmapsBlocksRows, single = false) {
         const beatmapsChunks = BeatmapProcessor.getBeatmapsChunks(beatmapsBlocksRows, single);
         beatmapsChunks.forEach(async (chunk) => {
-            const {mapsetsIds, beatmapBlockMap} =
-                BeatmapProcessor.prepareBeatmapBlocksForProcess(chunk);
+            const beatmapBlocks = BeatmapProcessor.prepareBeatmapBlocksForProcess(chunk);
 
-            await OsuApi.getMapsetsData(mapsetsIds, (beatmapData) => {
-                let beatmapMap = new Map().set(Object.keys(beatmapData)[0],
-                    beatmapBlockMap.get(Object.keys(beatmapData)[0]));
-                this.applyMapsetDataToBlocks(beatmapMap, beatmapData);
-            }, (failedBeatmapId) => {
-                const uncaughtBeatmapBlock = beatmapBlockMap.get(failedBeatmapId);
-                this.handleMissingBeatmapData(uncaughtBeatmapBlock);
+            const beatmapBlocksLastDiffs = await this.setDataToBeatmapBlock(beatmapBlocks);
+            const beatmapIdsToFetchPP = Object.keys(beatmapBlocksLastDiffs);
+            const cachedBeatmapsPPData = await this.getCachedBeatmapsPP(beatmapIdsToFetchPP);
+
+            Object.entries(beatmapBlocksLastDiffs).forEach(([beatmapId, beatmapBlock]) => {
+                const beatmapData = cachedBeatmapsPPData?.[beatmapId];
+                BeatmapProcessor.setPPToBeatmapBlock(beatmapBlock, beatmapId,
+                    (beatmapBlock) => this.setPPToBeatmapBlockAndReturnData(beatmapBlock, beatmapId),
+                    beatmapData
+                );
             });
         });
     }
 
-    applyMapsetDataToBlocks(beatmapBlockMap, mapsetsData) {
-        for (const [mapsetId, beatmapBlock] of beatmapBlockMap) {
-            if (mapsetsData[mapsetId]) {
-                const lastDiffData = this.getLastMapsetDiffInfo(mapsetsData[mapsetId]);
-                if (lastDiffData && lastDiffData.id) {
-                    BeatmapProcessor.processBeatmapBlock(beatmapBlock, mapsetId, lastDiffData,
-                        (beatmapBlock) => this.handleDeepInfoBtnClick(beatmapBlock, lastDiffData.id)
-                    );
-                    this.trySetBeatmapPPToBlock(beatmapBlock, lastDiffData.id);
-                } else {
-                    this.handleMissingBeatmapData(beatmapBlock);
+    async setDataToBeatmapBlock(beatmapBlocks) {
+        const beatmapBlockLastDiff = {};
+        const mapsetsIds = Object.keys(beatmapBlocks);
+
+        try {
+            await OsuApi.getMapsetsData(
+                mapsetsIds,
+                (mapsetId, mapsetData) => {
+                    const beatmapBlock = beatmapBlocks[mapsetId];
+                    const result = this.fillBeatmapBlock(mapsetId, mapsetData, beatmapBlock);
+                    Object.assign(beatmapBlockLastDiff, result);
+                },
+                (failedBeatmapId) => {
+                    const uncaughtBeatmapBlock = beatmapBlocks[failedBeatmapId];
+                    this.handleMissingBeatmapData(uncaughtBeatmapBlock);
                 }
-            } else {
-                this.handleMissingBeatmapData(beatmapBlock);
-            }
+            );
+
+            return beatmapBlockLastDiff;
+        } catch (err) {
+            log(`Failed to get data for mapsets ${mapsetsIds}\n ${err.message}`, 'dev', 'error');
         }
     }
 
-    async trySetBeatmapPPToBlock(beatmapBlock, beatmapId) {
-        const beatmapPPData = await OsuApi.tryGetCachedBeatmapPP(beatmapId);
-        BeatmapProcessor.setPPToBeatmapBlock(beatmapBlock, beatmapId,
-            (beatmapBlock) => this.setPPToBeatmapBlockAndReturnData(beatmapBlock, beatmapId), beatmapPPData);
+    /**
+     * Returns the PP data of beatmaps from the local cache.
+     * If the data is not available, it will try to load it from the server's cache.
+     * If the data has been fetched from server, it will locally cache it.
+     *
+     * @param {array} beatmapIds - An array of beatmap IDs for which PP data is to be retrieved.
+     * @returns {Promise<Object>} - A promise that resolves to an object containing PP data for the given beatmaps.
+     */
+    async getCachedBeatmapsPP(beatmapIds) {
+        let uncachedBeatmapsIds = [];
+        let result = {};
+
+        for (const beatmapId of beatmapIds) {
+            const cachedBeatmapData = cache.getBeatmap(beatmapId);
+            if (cachedBeatmapData) {
+                result[beatmapId] = cachedBeatmapData;
+            } else {
+                uncachedBeatmapsIds.push(beatmapId);
+            }
+        }
+
+        const serverCachedBeatmapPP = await OsuApi.tryFetchBeatmapsPPFromServersCache(uncachedBeatmapsIds)
+
+        Object.entries(serverCachedBeatmapPP).forEach(([beatmapId, beatmapData]) => {
+            cache.setBeatmap(beatmapId, beatmapData);
+            result[beatmapId] = beatmapData;
+        });
+
+        return result;
+    }
+
+    /**
+     * Fills the beatmap block with information and adds a button to retrieve PP.
+     * The button is added to the beatmap block at the same time as the first information mounting.
+     * It will be replaced later if PP is received from any cache.
+     *
+     * @returns {Object} An object containing the beatmap block with the added button and PP.
+     */
+    fillBeatmapBlock(mapsetId, mapsetData, beatmapBlock) {
+        const lastMapsetDiffId = this.getLastMapsetDiffInfo(mapsetData).id;
+
+        BeatmapProcessor.setPPToBeatmapBlock(
+            beatmapBlock,
+            lastMapsetDiffId,
+            (beatmapBlock) => this.setPPToBeatmapBlockAndReturnData(beatmapBlock, lastMapsetDiffId),
+            null
+        );
+
+        this.applyMapsetDataToBlocks(mapsetId, beatmapBlock, mapsetData);
+        return { [lastMapsetDiffId]: beatmapBlock };
+    }
+
+    applyMapsetDataToBlocks(mapsetId, beatmapBlock, mapsetData) {
+        if (!mapsetId || typeof mapsetData !== 'object' || !mapsetData || Object.keys(mapsetData).length === 0) {
+            return this.handleMissingBeatmapData(beatmapBlock);
+        }
+
+        const lastDiffData = this.getLastMapsetDiffInfo(mapsetData);
+        if (lastDiffData && lastDiffData.id) {
+            BeatmapProcessor.processBeatmapBlock(beatmapBlock, mapsetId, lastDiffData,
+                (beatmapBlock) => this.handleDeepInfoBtnClick(beatmapBlock, lastDiffData.id)
+            );
+        } else {
+            this.handleMissingBeatmapData(beatmapBlock);
+        }
     }
 
     processPopupGroupChanges(beatmapDiffsGroup) {
@@ -82,7 +151,6 @@ class MoreBeatmapInfo {
      * This method can be triggered in case there is an error retrieving mapsets data from the server.
      * It will add a retry button inside the beatmap block, where the information was supposed to be displayed.
      */
-
     handleMissingBeatmapData(beatmapBlock) {
         BeatmapProcessor.setBeatmapBlockFailed(beatmapBlock, async () => {
             try {

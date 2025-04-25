@@ -15,28 +15,32 @@ class IntermediateOsuApiService {
      * Retrieves mapset data for a list of mapset IDs. Checks the cache first and fetches missing data.
      * If data is fetched, it is cached for future use.
      *
+     * @async
      * @param {Array<string>} mapsetsIds - List of mapset IDs to retrieve data for.
-     * @returns {Object} - An object containing the mapset data for the requested IDs.
-     * @throws {Error} - If the input is not a valid array or if fetching mapset data fails.
+     * @param {Function} receivedBeatmapCallback - Callback called with {string} mapsetId, {Object} mapsetData.
+     * @param {Function} failedBeatmapCallback - Callback called with {string} mapsetId if data retrieval fails.
+     * @returns {Promise<boolean>} - A promise that resolves to true if the operation is successful.
+     * @throws {Error} - If the input is not a valid array, or if fetching mapset data fails.
      */
-    async getMapsetsData(mapsetsIds = [], cachedBeatmapCallback, failedBeatmapCallback) {
+    async getMapsetsData(mapsetsIds = [], receivedBeatmapCallback, failedBeatmapCallback) {
         if (!Array.isArray(mapsetsIds) || !(mapsetsIds.length >= 1)) {
             throw new Error(`Undefined array or empty "${mapsetsIds}"`);
         }
+
         const {result, unfoundedIds} = this.#getExistMapsetsFromCacheByIds(mapsetsIds);
         const idsFromCache = [];
-        Object.entries(result).forEach(([key, value]) => {
-            idsFromCache.push(key);
-            cachedBeatmapCallback({[key]: value});
+        Object.entries(result).forEach(([mapsetId, mapsetData]) => {
+            idsFromCache.push(mapsetId);
+            receivedBeatmapCallback(mapsetId, mapsetData);
         });
 
         try {
             if (unfoundedIds.length > 0) {
                 const dataFromSever = await this.getMapsetsDataFromSever(unfoundedIds);
                 let caughtIds = [];
-                Object.entries(dataFromSever).forEach(([key, value]) => {
-                    caughtIds.push(key);
-                    cachedBeatmapCallback({[key]: value});
+                Object.entries(dataFromSever).forEach(([mapsetId, mapsetData]) => {
+                    caughtIds.push(mapsetId);
+                    receivedBeatmapCallback(mapsetId, mapsetData);
                 });
 
                 mapsetsIds.forEach(id => {
@@ -50,6 +54,33 @@ class IntermediateOsuApiService {
         } catch (err) {
             throw new Error(`Failed to get mapset data\n${err.message}`, 'dev', 'error');
         }
+    }
+
+    /**
+     * @param {array} idsToFetch
+     * @returns {Promise<Object>}
+     */
+    async tryFetchBeatmapsPPFromServersCache(idsToFetch) {
+        const result = {};
+
+        try {
+            if (idsToFetch.length > 0) {
+                const idsString = idsToFetch.join(',');
+                const response = await axios.get(`/api/cachedBeatmapsData?beatmapsIds=${idsString}`);
+                if (response.data && Object.keys(response.data).length > 0) {
+                    Object.entries(response.data).forEach(([mapsetId, mapsetData]) => {
+                        if (mapsetId && mapsetData) {
+                            result[mapsetId] = mapsetData;
+                        }
+                    });
+                }
+            }
+        } catch(error) {
+            log(`Failed to catch cached PP from server for beatmaps ${idsToFetch}\n${error.message}`, 'dev', 'error');
+            return {};
+        }
+
+        return result;
     }
 
     async getMapsetsDataFromSever(idsToFetch) {
@@ -110,27 +141,6 @@ class IntermediateOsuApiService {
         log(filteredBeatmapCalcData, 'debug');
 
         return filteredBeatmapCalcData;
-    }
-
-    /**
-     * Attempts to retrieve the PP data of a beatmap from the server cache.
-     * If the server already has it cached, we will receive it; otherwise, we will get null.
-     *
-     * @param {string|number} beatmapId
-     * @returns {Promise<{difficulty: {[p: string]: *}, pp: number}|null>}
-     */
-    async tryGetCachedBeatmapPP(beatmapId) {
-        try {
-            const response = await axios.get(`/api/cachedBeatmapData/${beatmapId}`);
-            if (!response.data || Object.keys(response.data).length === 0) {
-                throw new Error(`Cached beatmap data is empty`);
-            }
-            const filteredBeatmapData = this.#filterCalculatedBeatmapData(response.data);
-            cache.setBeatmap(beatmapId, filteredBeatmapData);
-            return filteredBeatmapData;
-        } catch (error) {
-            return null;
-        }
     }
 
     /**

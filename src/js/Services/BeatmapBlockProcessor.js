@@ -31,16 +31,14 @@ class BeatmapBlockProcessor {
             throw new Error(`Invalid beatmapBlocks array "${beatmapBlocks}"`);
         }
 
-        const mapsetsIds = [];
-        const beatmapBlockMap = new Map();
+        const beatmapBlockMap = {};
 
         for (const beatmapBlock of beatmapBlocks) {
             const mapsetId = this.preProcessBeatmapBlock(beatmapBlock);
-            mapsetsIds.push(mapsetId);
-            beatmapBlockMap.set(mapsetId, beatmapBlock);
+            beatmapBlockMap[mapsetId] = beatmapBlock;
         }
 
-        return { mapsetsIds, beatmapBlockMap };
+        return beatmapBlockMap;
     }
 
     preProcessBeatmapBlock(beatmapBlock) {

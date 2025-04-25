@@ -51,7 +51,6 @@ const continueRequestingIf429 = async (status, url) => {
     }
 };
 
-
 /**
  * Refreshes the client token by making a request to the token endpoint.
  * If it fails, all requests are stopped.

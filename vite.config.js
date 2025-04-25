@@ -22,6 +22,7 @@ export default {
                 chunkFileNames: '[name].js',
             },
         },
+        minify: false,
     },
     css: {
         postcss: {},
