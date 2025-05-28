@@ -30,6 +30,47 @@ class CacheService {
         this.#setItemWithId(id, data, this.localStorageBeatmapsItemKey, this.localStorageBeatmapsKey);
     }
 
+    removeMapset(mapsetId) {
+        const cache = JSON.parse(localStorage.getItem(this.localStorageMapsetsKey)) || {};
+        const cacheKey = `${this.localStorageMapsetsItemKey}_${mapsetId}`;
+        if (cache[cacheKey]) {
+            delete cache[cacheKey];
+            localStorage.setItem(this.localStorageMapsetsKey, JSON.stringify(cache));
+            log(`Removed mapset with id ${mapsetId} from cache`, 'dev');
+            return true;
+        }
+        return false;
+    }
+
+    getBeatmapsByIdOfItsMapset(mapsetId) {
+        const cache = JSON.parse(localStorage.getItem(this.localStorageMapsetsKey)) || {};
+        const cacheKey = `${this.localStorageMapsetsItemKey}_${mapsetId}`;
+        if (cache[cacheKey]) {
+            return cache[cacheKey].beatmaps;
+        }
+    }
+
+    removeAllBeatmapsFromCacheByIDOfItsMapset(mapsetId) {
+        const beatmaps = this.getBeatmapsByIdOfItsMapset(mapsetId);
+        if (!beatmaps) return;
+
+        this.getBeatmapsByIdOfItsMapset(mapsetId).forEach(beatmap => {
+            this.removeBeatmap(beatmap.id);
+        })
+    }
+
+    removeBeatmap(beatmapId) {
+        const cache = JSON.parse(localStorage.getItem(this.localStorageBeatmapsKey)) || {};
+        const key = `${this.localStorageBeatmapsItemKey}_${beatmapId}`;
+        if (cache[key]) {
+            delete cache[key];
+            localStorage.setItem(this.localStorageBeatmapsKey, JSON.stringify(cache));
+            log(`Beatmap ${beatmapId} removed from cache`, 'dev');
+            return true;
+        }
+        return false;
+    }
+
     /** TODO: Optimize
      * Searching for beatmap info in the beatmapsets cache by its ID.
      *

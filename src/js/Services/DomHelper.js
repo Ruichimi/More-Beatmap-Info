@@ -88,17 +88,26 @@ class DomHelper {
 
     addDeepInfoButtonToBeatmap(beatmapBlock, callbackClick) {
         const beatmapBlockRightMenu = beatmapBlock.querySelector('.beatmapset-panel__menu');
+
+        if (beatmapBlockRightMenu.querySelector('.deep-info-btn')) {
+            return;
+        }
+
         const moreDiffInfoBtn = this.createDeepInfoBtn();
+        moreDiffInfoBtn.classList.add('deep-info-btn');
+
         beatmapBlockRightMenu.insertAdjacentElement('afterbegin', moreDiffInfoBtn);
         moreDiffInfoBtn.addEventListener('click', async () => {
             callbackClick(beatmapBlock);
         });
     }
 
+
     createDeepInfoBtn() {
         const btnContent = `i`;
 
         const moreDiffInfoBtn = document.createElement('button');
+        moreDiffInfoBtn.title = "Get detailed information about the beatmap";
         moreDiffInfoBtn.classList.add('more-diff-info-btn');
         moreDiffInfoBtn.innerHTML = btnContent;
         return moreDiffInfoBtn;

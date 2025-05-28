@@ -121,8 +121,20 @@ class MoreBeatmapInfo {
             null
         );
 
+        BeatmapProcessor.setUpdateInfoBtnToBeatmapBlock(beatmapBlock, mapsetId, async () => {
+            await this.updateInfoInBeatmapBlock(beatmapBlock, mapsetId);
+        });
+
         this.applyMapsetDataToBlocks(mapsetId, beatmapBlock, mapsetData);
         return { [lastMapsetDiffId]: beatmapBlock };
+    }
+
+    async updateInfoInBeatmapBlock(beatmapBlock, mapsetId) {
+        cache.removeAllBeatmapsFromCacheByIDOfItsMapset(mapsetId);
+        cache.removeMapset(mapsetId);
+        const updatedData = await OsuApi.updateMapsetDataOnServerAngGetIt(mapsetId);
+        const lastMapsetDiffData = this.getLastMapsetDiffInfo(updatedData);
+        BeatmapProcessor.setInfoToBeatmapBlock(beatmapBlock, lastMapsetDiffData);
     }
 
     applyMapsetDataToBlocks(mapsetId, beatmapBlock, mapsetData) {

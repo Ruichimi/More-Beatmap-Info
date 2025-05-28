@@ -143,3 +143,20 @@
 .beatmaps-popup::before {
     --panel-height: 115px;
 }
+
+/*.beatmap-update-info-btn {*/
+/*    background: 0;*/
+/*    color: #b8d3e0;*/
+/*    border: 0;*/
+/*}*/
+
+.beatmap-update-info-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 !important;
+}
+
+.beatmap-update-info-btn:hover {
+    color: #ffffff;
+}

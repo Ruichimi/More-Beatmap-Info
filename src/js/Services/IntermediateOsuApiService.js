@@ -15,7 +15,6 @@ class IntermediateOsuApiService {
      * Retrieves mapset data for a list of mapset IDs. Checks the cache first and fetches missing data.
      * If data is fetched, it is cached for future use.
      *
-     * @async
      * @param {Array<string>} mapsetsIds - List of mapset IDs to retrieve data for.
      * @param {Function} receivedBeatmapCallback - Callback called with {string} mapsetId, {Object} mapsetData.
      * @param {Function} failedBeatmapCallback - Callback called with {string} mapsetId if data retrieval fails.
@@ -100,6 +99,13 @@ class IntermediateOsuApiService {
         } catch {
             return {};
         }
+    }
+
+    async updateMapsetDataOnServerAngGetIt(mapsetId) {
+        const response = await axios.post(`/api/updateMapset/${mapsetId}`);
+        const filteredData = this.#processBeatmapsetData(mapsetId, response.data);
+        cache.setMapset(mapsetId,filteredData);
+        return response.data;
     }
 
     /**

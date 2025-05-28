@@ -4,7 +4,7 @@ function mountTestField() {
     container.style.color = "black";
     container.style.top = "10px";
     container.style.right = "10px";
-    container.style.background = "white";
+    container.style.background = "rgba(255, 255, 255, 0.3)";
     container.style.border = "1px solid #ccc";
     container.style.padding = "10px";
     container.style.zIndex = "999999";
@@ -65,7 +65,46 @@ function mountTestField() {
         }
     });
 
+    container.appendChild(document.createElement("br"));
+    container.appendChild(document.createElement("br"));
+
+    // Контейнер для кнопок в колонке
+    const buttonColumn = document.createElement("div");
+    buttonColumn.style.display = "flex";
+    buttonColumn.style.flexDirection = "column";
+    buttonColumn.style.gap = "6px"; // отступ между кнопками
+
+    const removeBeatmapsBtn = document.createElement("button");
+    removeBeatmapsBtn.textContent = "Clear beatmapsCache";
+    removeBeatmapsBtn.style.color = "black";
+    removeBeatmapsBtn.addEventListener("click", () => {
+        if (localStorage.getItem("beatmapsCache")) {
+            localStorage.removeItem("beatmapsCache");
+            alert("Removed beatmapsCache from localStorage.");
+        } else {
+            alert("beatmapsCache not found in localStorage.");
+        }
+    });
+
+    const removeBeatmapsetsBtn = document.createElement("button");
+    removeBeatmapsetsBtn.textContent = "Clear beatmapsetsCache";
+    removeBeatmapsetsBtn.style.color = "black";
+    removeBeatmapsetsBtn.addEventListener("click", () => {
+        if (localStorage.getItem("beatmapsetsCache")) {
+            localStorage.removeItem("beatmapsetsCache");
+            alert("Removed beatmapsetsCache from localStorage.");
+        } else {
+            alert("beatmapsetsCache not found in localStorage.");
+        }
+    });
+
+    buttonColumn.appendChild(removeBeatmapsBtn);
+    buttonColumn.appendChild(removeBeatmapsetsBtn);
+    container.appendChild(buttonColumn);
+
     document.body.appendChild(container);
 }
+
+
 
 export default mountTestField;
