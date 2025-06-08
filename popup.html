@@ -1,10 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Osu!</title>
     <link rel="stylesheet" type="text/css" href="src/assets/css/popup.css">
+    <script type="module" src="src/js/popup.js"></script>
 </head>
 <body>
-<h2><nobr>More Beatmap Info</nobr></h2>
+<h2>
+    <nobr>More Beatmap Info v1.0 beta</nobr>
+</h2>
+
+<div class="accordion">
+    <input type="checkbox" id="toggle">
+    <label for="toggle">Show video</label>
+    <div class="content" style="width: 100%; height: 175px; overflow: hidden; position: relative;">
+        <iframe src="https://www.youtube.com/embed/HdVnlj668FA"
+                style="width: 2144px; height: 1206px; position: absolute; top: 0; left: 0; transform: scale(0.144); transform-origin: top left;"
+                frameborder="0" allowfullscreen>
+        </iframe>
+    </div>
+</div>
+
+<div class="issue-report">
+    Have any problem with extension?
+    <a class="issue-report-link" href="https://github.com/Ruichimi/More-Beatmap-Info/issues">
+        Report it here
+    </a>
+</div>
 </body>
 </html>

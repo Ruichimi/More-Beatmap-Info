@@ -6,8 +6,71 @@
 }
 
 body {
+    color: white;
     font-family: 'Fredoka', sans-serif;
     background-size: cover;
-    background-image: url("../images/bg/popup-bg.png");
-    color: white;
+    /*background-image: url("../images/bg/popup-bg.png");*/
+    background-color: #6002c4;
+    background-image:  repeating-radial-gradient( circle at 0 0, transparent 0, #6002c4 40px ), repeating-linear-gradient( #3802ad55, #3802ad );
+}
+
+.issue-report {
+    margin-top: 10px;
+    display: flex;
+    width: 100%;
+}
+
+.issue-report-link {
+    color: #89bbfa;
+    margin-left: 4px;
+}
+
+iframe {
+    border-radius: 10px;
+}
+
+.accordion {
+    width: 300px;
+}
+
+.accordion input {
+    display: none;
+}
+
+.accordion label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.3s;
+    position: relative;
+    font-size: 20px;
+}
+
+.accordion label::after {
+    margin-left: 4px !important;
+    content: "▸";
+    transition: transform 0.3s ease;
+    font-size: 1.2em;
+}
+
+.accordion input:checked + label::after {
+    transform: rotate(90deg);
+}
+
+.content {
+    margin-top: 4px;
+    display: flex;
+    background: #222222;
+    width: 100%;
+    justify-content: center;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, padding 0.5s;
+    border-radius: 8px;
+    padding: 0;
+}
+
+.accordion input:checked ~ .content {
+    max-height: 200px;
 }
