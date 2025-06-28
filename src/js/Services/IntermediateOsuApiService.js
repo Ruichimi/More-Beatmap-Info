@@ -74,7 +74,7 @@ class IntermediateOsuApiService {
                     });
                 }
             }
-        } catch(error) {
+        } catch (error) {
             log(`Failed to catch cached PP from server for beatmaps ${idsToFetch}\n${error.message}`, 'dev', 'error');
             return {};
         }
@@ -104,7 +104,7 @@ class IntermediateOsuApiService {
     async updateMapsetDataOnServerAngGetIt(mapsetId) {
         const response = await axios.post(`/api/updateMapset/${mapsetId}`);
         const filteredData = this.#processBeatmapsetData(mapsetId, response.data);
-        cache.setMapset(mapsetId,filteredData);
+        cache.setMapset(mapsetId, filteredData);
         return response.data;
     }
 
@@ -119,13 +119,17 @@ class IntermediateOsuApiService {
      * @returns {Promise<Object>} - The filtered and calculated beatmap data.
      */
     async getCalculatedBeatmapData(beatmapId) {
-        const cachedBeatmapPP = cache.getBeatmap(beatmapId);
-        if (cachedBeatmapPP) {
-            return cachedBeatmapPP;
-        } else {
-            const beatmapData = await this.#fetchCalculatedBeatmapData(beatmapId);
-            cache.setBeatmap(beatmapId, beatmapData);
-            return beatmapData;
+        try {
+            const cachedBeatmapPP = cache.getBeatmap(beatmapId);
+            if (cachedBeatmapPP) {
+                return cachedBeatmapPP;
+            } else {
+                const beatmapData = await this.fetchCalculatedBeatmapData(beatmapId);
+                cache.setBeatmap(beatmapId, beatmapData);
+                return beatmapData;
+            }
+        } catch (error) {
+            throw new Error(`Failed to get beatmap pp:\n ${error.massage}`);
         }
     }
 
@@ -141,7 +145,7 @@ class IntermediateOsuApiService {
      * @param {string|number} beatmapId
      * @returns {Promise<Object>}
      */
-    async #fetchCalculatedBeatmapData(beatmapId) {
+    async fetchCalculatedBeatmapData(beatmapId) {
         const beatmapStructure = await this.#getBeatmapStructureAsText(beatmapId);
         const filteredBeatmapCalcData = await this.#getFilteredCalculatedBeatmapData(beatmapId, beatmapStructure);
         log(filteredBeatmapCalcData, 'debug');
@@ -241,7 +245,6 @@ class IntermediateOsuApiService {
             log(response.data, 'debug');
             return this.#filterCalculatedBeatmapData(response.data);
         } catch (error) {
-            log(`Failed to get beatmap pp`, 'prod', 'error');
             throw new Error(`Failed to get beatmap pp:\n ${error}`);
         }
     }
@@ -271,18 +274,14 @@ class IntermediateOsuApiService {
      * @returns {Promise<string|undefined>} - A promise that resolves to the beatmap structure as text if successful.
      */
     async #getBeatmapStructureAsText(beatmapId) {
-        try {
-            const response = await axios.get(`https://osu.ppy.sh/osu/${beatmapId}`, {
-                responseType: 'text',
-            });
-            const beatmapStructure = response.data;
-            if (beatmapStructure.length < 50 || typeof beatmapStructure !== 'string') {
-                log(`Something went wrong, with beatmap structure: ${beatmapStructure.length}`, 'dev');
-            }
-            return beatmapStructure;
-        } catch (error) {
-            log(`Failed to get pp for beatmap: ${beatmapId}\n, ${error}`, 'prod', 'error');
+        const response = await axios.get(`https://osu.ppy.sh/osu/${beatmapId}`, {
+            responseType: 'text',
+        });
+        const beatmapStructure = response.data;
+        if (beatmapStructure.length < 50 || typeof beatmapStructure !== 'string') {
+            log(`Something went wrong, with beatmap structure: ${beatmapStructure.length}`, 'dev');
         }
+        return beatmapStructure;
     }
 
     /**

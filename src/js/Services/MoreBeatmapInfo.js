@@ -199,9 +199,13 @@ class MoreBeatmapInfo {
     }
 
     async setPPToBeatmapBlockAndReturnData(beatmapBlock, beatmapId) {
-        const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
-        BeatmapProcessor.setPPToBeatmapBlock(beatmapBlock, beatmapId, null, beatmapPP);
-        return beatmapPP;
+        try {
+            const beatmapPP = await OsuApi.getCalculatedBeatmapData(beatmapId);
+            BeatmapProcessor.setPPToBeatmapBlock(beatmapBlock, beatmapId, null, beatmapPP);
+            return beatmapPP;
+        } catch (error) {
+            log(`Failed to get beatmap pp for beatmap ${beatmapId}`, 'prod', 'error');
+        }
     }
 
     createBeatmapDifficultyParamsString(beatmapData) {

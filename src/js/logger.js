@@ -1,5 +1,5 @@
 // Current log level that determines which logs will be displayed
-const currentLogLevel = 'dev';
+const currentLogLevel = 'prod';
 
 const logPriority = {
     'prod': 0,      // For production environment, lowest priority

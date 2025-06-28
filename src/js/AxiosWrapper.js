@@ -155,7 +155,7 @@ instance.interceptors.request.use(async config => {
         return Promise.reject(new axios.Cancel(`Reject the request because all requests are stopped.: ${config.url}`));
     }
     if (forbiddenRequests.has(config.url)) {
-        console.warn(`${config.url} has been banned`);
+        log(`${config.url} has been banned`, 'dev', 'warn');
         return Promise.reject(new axios.Cancel(`Request has been denied: ${config.url}`));
     }
     if (ongoingRequests.has(config.url)) {

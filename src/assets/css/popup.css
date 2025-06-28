@@ -8,25 +8,17 @@
 body {
     color: white;
     font-family: 'Fredoka', sans-serif;
+    background: linear-gradient(
+        180deg,
+        rgba(99, 42, 202, 1),
+        rgba(115, 45, 195, 1),
+        rgba(130, 28, 190, 1)
+    );
     background-size: cover;
-    /*background-image: url("../images/bg/popup-bg.png");*/
-    background-color: #6002c4;
-    background-image:  repeating-radial-gradient( circle at 0 0, transparent 0, #6002c4 40px ), repeating-linear-gradient( #3802ad55, #3802ad );
 }
 
-.issue-report {
-    margin-top: 10px;
-    display: flex;
-    width: 100%;
-}
-
-.issue-report-link {
-    color: #89bbfa;
-    margin-left: 4px;
-}
-
-iframe {
-    border-radius: 10px;
+h2 {
+    margin-bottom: 12px;
 }
 
 .accordion {
@@ -41,17 +33,17 @@ iframe {
     display: flex;
     align-items: center;
     cursor: pointer;
+    font-size: 20px;
     border-radius: 8px;
     transition: background 0.3s;
     position: relative;
-    font-size: 20px;
 }
 
 .accordion label::after {
-    margin-left: 4px !important;
     content: "▸";
-    transition: transform 0.3s ease;
     font-size: 1.2em;
+    margin-left: 4px;
+    transition: transform 0.3s ease;
 }
 
 .accordion input:checked + label::after {
@@ -59,18 +51,48 @@ iframe {
 }
 
 .content {
+    position: relative;
     margin-top: 4px;
-    display: flex;
-    background: #222222;
+    padding: 0;
     width: 100%;
-    justify-content: center;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.5s ease, padding 0.5s;
+    display: flex;
+    justify-content: center;
     border-radius: 8px;
-    padding: 0;
+    transition: max-height 0.5s ease, padding 0.5s;
+    height: 207px;
 }
 
 .accordion input:checked ~ .content {
     max-height: 200px;
+}
+
+.video-link-title {
+    color: #89bbfa;
+    font-size: 18px;
+    margin-right: auto;
+}
+
+iframe {
+    width: 2144px;
+    height: 1206px;
+    border: none;
+    border-radius: 10px;
+    position: absolute;
+    top: 32px;
+    left: 0;
+    transform: scale(0.144);
+    transform-origin: top left;
+}
+
+.issue-report {
+    margin-top: 10px;
+    display: flex;
+    width: 100%;
+}
+
+.issue-report-link {
+    color: #89bbfa;
+    margin-left: 4px;
 }
