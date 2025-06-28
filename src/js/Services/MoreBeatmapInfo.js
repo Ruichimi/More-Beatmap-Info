@@ -34,7 +34,6 @@ class MoreBeatmapInfo {
         const beatmapsChunks = BeatmapProcessor.getBeatmapsChunks(beatmapsBlocksRows, single);
         beatmapsChunks.forEach(async (chunk) => {
             const beatmapBlocks = BeatmapProcessor.prepareBeatmapBlocksForProcess(chunk);
-
             const beatmapBlocksLastDiffs = await this.setDataToBeatmapBlock(beatmapBlocks);
             const beatmapIdsToFetchPP = Object.keys(beatmapBlocksLastDiffs);
             const cachedBeatmapsPPData = await this.getCachedBeatmapsPP(beatmapIdsToFetchPP);
@@ -112,6 +111,13 @@ class MoreBeatmapInfo {
      * @returns {Object} An object containing the beatmap block with the added button and PP.
      */
     fillBeatmapBlock(mapsetId, mapsetData, beatmapBlock) {
+        if (mapsetData === '') {
+            BeatmapProcessor.setUpdateInfoBtnToBeatmapBlock(beatmapBlock, mapsetId, async () => {
+                await this.updateInfoInBeatmapBlock(beatmapBlock, mapsetId);
+            });
+            return { '': beatmapBlock };
+        }
+
         const lastMapsetDiffId = this.getLastMapsetDiffInfo(mapsetData).id;
 
         BeatmapProcessor.setPPToBeatmapBlock(

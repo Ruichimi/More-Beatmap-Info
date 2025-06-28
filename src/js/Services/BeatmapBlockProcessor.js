@@ -100,6 +100,8 @@ class BeatmapBlockProcessor {
     }
 
     setPPToBeatmapBlock(beatmapBlock, beatmapId, callbackClick, beatmapPPData = null) {
+        if (!beatmapId) return;
+
         const beatmapPPBlock = beatmapBlock.querySelector('.pp-block');
         if (!beatmapPPBlock) {
             const beatmapNameBlock = beatmapBlock.querySelector('.beatmapset-panel__info').firstElementChild;

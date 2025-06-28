@@ -209,6 +209,10 @@ class IntermediateOsuApiService {
             if (!(typeof beatmapsetData === 'object' && beatmapsetData !== null && 'id' in beatmapsetData)) {
                 throw new Error(`Received bad response for ${beatmapsetId} mapset`);
             }
+
+            if (beatmapsetData.data === 'empty') {
+                return '';
+            }
             const dateForCache = this.#getDateForCache(beatmapsetData);
             const beatmaps = beatmapsetData.beatmaps.map((beatmap) =>
                 this.#filterObject(beatmap, beatmapsetBeatmapRequiredFields)
