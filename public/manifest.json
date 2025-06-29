@@ -3,9 +3,6 @@
     "name": "osu! More Beatmaps Info (beta)",
     "version": "1.0.0",
     "description": "Adds to osu! beatmaps selection page additional details to help you choose the right beatmaps more efficiently and conveniently",
-    "permissions": [
-        "storage"
-    ],
     "host_permissions": [
         "https://osu.ppy.sh/*"
     ],

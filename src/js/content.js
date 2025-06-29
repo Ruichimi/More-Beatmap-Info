@@ -6,7 +6,7 @@ import DomHelper from "./Services/DomHelper";
 
 const observer = new DOMObserver();
 const MBI = new MoreBeatmapInfo(observer);
-const mountDevToolsDOM = true;
+const mountDevToolsDOM = false;
 
 if (mountDevToolsDOM) devTools();
 
