@@ -18,6 +18,8 @@ window.onload = function () {
     observeBeatmapsetsPageAndLoadExtension();
 };
 
+observeBeatmapsetsPageAndLoadExtension();
+
 window.addEventListener('popstate', () => {
     if (isBeatmapSetsPage()) {
         reloadExtension();
@@ -43,14 +45,34 @@ function initMoreBeatmapInfo() {
     }
 }
 
+function waitForBeatmapsContainer(callback) {
+    const targetNode = document.body;
+    const config = { childList: true, subtree: true };
+
+    const observer = new MutationObserver((mutationsList, observerInstance) => {
+        const items = document.querySelector('.beatmapsets__items');
+        if (items) {
+            observerInstance.disconnect();
+            callback();
+        }
+    });
+
+    observer.observe(targetNode, config);
+}
+
 function reloadExtension(withDom = false) {
     log('Перезагружаем расширение', 'prod');
     observer.stopAllObserving();
+
     if (withDom) {
         DomHelper.clearDOM();
     }
-    initMoreBeatmapInfo();
+
+    waitForBeatmapsContainer(() => {
+        initMoreBeatmapInfo();
+    });
 }
+
 
 function observeBeatmapsetsPageAndLoadExtension() {
     let initCalled = true;
