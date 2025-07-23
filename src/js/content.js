@@ -3,19 +3,17 @@ import devTools from "@/js/devTools";
 import DOMObserver from "./Services/DOMObserver";
 import MoreBeatmapInfo from "./Services/MoreBeatmapInfo";
 import DomHelper from "./Services/DomHelper";
+import config from '/config';
 
 const observer = new DOMObserver();
 const MBI = new MoreBeatmapInfo(observer);
-const mountDevToolsDOM = false;
 
-if (mountDevToolsDOM) devTools();
+if (config.enable_devToolPanel) devTools();
 
 window.onload = function () {
     if (isBeatmapSetsPage()) {
         initMoreBeatmapInfo();
     }
-
-    observeBeatmapsetsPageAndLoadExtension();
 };
 
 observeBeatmapsetsPageAndLoadExtension();
@@ -61,7 +59,7 @@ function waitForBeatmapsContainer(callback) {
 }
 
 function reloadExtension(withDom = false) {
-    log('Перезагружаем расширение', 'prod');
+    log('Перезагружаем расширение', 'dev');
     observer.stopAllObserving();
 
     if (withDom) {

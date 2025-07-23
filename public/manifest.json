@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "osu! More Beatmaps Info (beta)",
-    "version": "1.0.0",
+    "name": "osu! More Beatmaps Info",
+    "version": "1.0.1",
     "description": "Adds to osu! beatmaps selection page additional details to help you choose the right beatmaps more efficiently and conveniently",
     "host_permissions": [
         "https://osu.ppy.sh/*"
@@ -12,8 +12,18 @@
             "matches": ["https://osu.ppy.sh/*"]
         }
     ],
+    "icons": {
+        "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    },
     "action": {
-        "default_icon": "icon.png",
+        "default_icon": {
+            "16": "icon16.png",
+            "32": "icon32.png",
+            "48": "icon48.png",
+            "128": "icon128.png"
+        },
         "default_popup": "popup.html"
     },
     "content_scripts": [

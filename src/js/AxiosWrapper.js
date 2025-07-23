@@ -14,7 +14,7 @@ import log from "@/js/logger.js";
  */
 
 const instance = axios.create({
-    baseURL: 'https://morebeatmapinfo.com',
+    baseURL: Config.server_url,
     timeout: 15000,
 });
 

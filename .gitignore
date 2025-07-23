@@ -2,6 +2,5 @@
 dist
 node_modules
 env.json
-config.js
 TODO.txt
 identifier.sqlite
