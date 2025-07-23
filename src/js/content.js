@@ -10,19 +10,30 @@ const MBI = new MoreBeatmapInfo(observer);
 
 if (config.enable_devToolPanel) devTools();
 
-window.onload = function () {
-    if (isBeatmapSetsPage()) {
-        initMoreBeatmapInfo();
-    }
-};
-
 observeBeatmapsetsPageAndLoadExtension();
 
 window.addEventListener('popstate', () => {
     if (isBeatmapSetsPage()) {
-        reloadExtension();
+        loadExtension();
     }
 });
+
+function observeBeatmapsetsPageAndLoadExtension() {
+    let needToReload = true;
+
+    const UrlObserve = new MutationObserver(() => {
+        if (isBeatmapSetsPage()) {
+            if (needToReload) {
+                loadExtension();
+                needToReload = false;
+            }
+        } else {
+            needToReload = true;
+        }
+    });
+
+    UrlObserve.observe(document.querySelector('head'), {childList: true, subtree: false});
+}
 
 function isBeatmapSetsPage() {
     return window.location.pathname.startsWith('/beatmapsets');
@@ -32,13 +43,13 @@ function initMoreBeatmapInfo() {
     try {
         if (!document.getElementById('last-diff-info')) {
             DomHelper.addUniqueElementToDOM('last-diff-info');
-            log('Инициализируем Last Diff Info', 'dev');
+            log('Initialization Last Diff Info', 'dev');
             MBI.initialize();
         } else {
-            log('Last diff info уже инициализирован', 'dev', 'warning');
+            log('Last diff info is already initialized', 'dev', 'warning');
         }
     } catch (error) {
-        log(`Ошибка при инициализации LastDiffInfo: ${error.message}`, 'prod', 'error');
+        log(`Error initializing LastDiffInfo: ${error.message}`, 'prod', 'error');
         MBI.reloadExtensionEvent();
     }
 }
@@ -58,11 +69,11 @@ function waitForBeatmapsContainer(callback) {
     observer.observe(targetNode, config);
 }
 
-function reloadExtension(withDom = false) {
-    log('Перезагружаем расширение', 'dev');
+function loadExtension(cleanDOM = false) {
+    log('Load extension', 'dev');
     observer.stopAllObserving();
 
-    if (withDom) {
+    if (cleanDOM) {
         DomHelper.clearDOM();
     }
 
@@ -71,22 +82,4 @@ function reloadExtension(withDom = false) {
     });
 }
 
-
-function observeBeatmapsetsPageAndLoadExtension() {
-    let initCalled = true;
-
-    const UrlObserve = new MutationObserver(() => {
-        if (isBeatmapSetsPage()) {
-            if (!initCalled) {
-                reloadExtension();
-                initCalled = true;
-            }
-        } else {
-            initCalled = false;
-        }
-    });
-
-    UrlObserve.observe(document.querySelector('head'), {childList: true, subtree: false});
-}
-
-window.addEventListener('reloadExtensionRequested', () => reloadExtension(true));
+window.addEventListener('reloadExtensionRequested', () => loadExtension(true));
