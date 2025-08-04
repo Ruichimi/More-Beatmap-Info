@@ -1,4 +1,5 @@
 import path from 'path';
+import config from './config';
 
 export default {
     base: '',
@@ -23,7 +24,7 @@ export default {
                 chunkFileNames: '[name].js',
             },
         },
-        minify: true,
+        minify: config.minifyCode,
     },
     css: {
         postcss: {},

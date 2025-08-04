@@ -5,11 +5,13 @@ export default {
     client_id: '4378920f',
 
     // Current log level: prod, dev, debug, full
-    log_level: 'prod',
+    log_level: 'dev',
 
     // Enable cache cleaning dev tool panel
     enable_devToolPanel: false,
 
-    server_url: 'https://morebeatmapinfo.com',
-    // server_url: 'http://localhost:3000',
+    //server_url: 'https://morebeatmapinfo.com',
+    server_url: 'http://localhost:3000',
+
+    minifyCode: false, //Don't forget to manually restart 'npm run dev' if switch
 };
