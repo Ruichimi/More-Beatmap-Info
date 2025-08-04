@@ -5,13 +5,14 @@ export default {
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
+            '@services': path.resolve(__dirname, 'src/js/Services'),
             '@assets': path.resolve(__dirname, 'src/assets'),
         },
     },
     build: {
         rollupOptions: {
             input: {
-                content: path.resolve(__dirname, 'src/js/content.js'),
+                main: path.resolve(__dirname, 'src/js/main.js'),
                 mainCss: path.resolve(__dirname, 'src/assets/css/main.css'),
                 popup: path.resolve(__dirname, 'popup.html'),
             },

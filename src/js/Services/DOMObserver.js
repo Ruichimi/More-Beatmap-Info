@@ -64,7 +64,6 @@ class DOMObserver {
     }
 
     stopAllObserving() {
-        log('meow', 'debug');
         log(this.observers, 'debug');
         this.observers.forEach((observer, targetSelector) => {
             observer.disconnect();

@@ -13,7 +13,7 @@
     "name": "more-beatmap-info",
     "version": "1.0.0",
     "description": "Adds information about the last difficulty from the mapset to the maps list page",
-    "main": "src/js/content.js",
+    "main": "src/js/main.js",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Cadregich/More-Beatmap-Info"

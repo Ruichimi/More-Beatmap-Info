@@ -7,10 +7,15 @@ class DomHelper {
         this.isBeatmapsContainerInitialized = false;
     }
 
+    reloadBeatmapsContainer() {
+        this.beatmapsContainer = document.body;
+        this.isBeatmapsContainerInitialized = false;
+        this.setBeatmapsContainerIfNeeded();
+    }
+
     setBeatmapsContainerIfNeeded() {
         if (!this.isBeatmapsContainerInitialized) {
             const beatmapsContainer = document.querySelector('.beatmapsets__items');
-
             if (beatmapsContainer) {
                 this.beatmapsContainer = beatmapsContainer;
                 this.isBeatmapsContainerInitialized = true;
@@ -32,7 +37,8 @@ class DomHelper {
     }
 
     removeUniqueElementFromDOM() {
-        const element = this.createdUniqueElementId && document.getElementById(this.createdUniqueElementId);
+        const element = this.createdUniqueElementId && document.getElementById('last-diff-info');
+
         if (element) {
             element.remove();
             log(`Элемент с ID "${this.createdUniqueElementId}" удалён`, 'debug');
