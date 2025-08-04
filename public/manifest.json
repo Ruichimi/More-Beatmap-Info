@@ -33,12 +33,18 @@
                 "https://osu.ppy.sh/beatmapsets/*"
             ],
             "js": [
-                "content.js"
+                "main.js"
             ],
             "css": [
                 "mainCss.css"
             ],
             "run_at": "document_end"
         }
-    ]
+    ],
+
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "mbi@extension.osu"
+        }
+    }
 }
