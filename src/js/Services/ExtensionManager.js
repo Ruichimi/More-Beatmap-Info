@@ -32,6 +32,7 @@ class ExtensionManager {
         return window.location.pathname.startsWith('/beatmapsets');
     }
 
+    //TODO: limit the count of restarts the extension if an error caught
     initMoreBeatmapInfo() {
         try {
             if (!document.getElementById('last-diff-info')) {
@@ -74,6 +75,12 @@ class ExtensionManager {
 
             this.initMoreBeatmapInfo();
         });
+    }
+
+    reloadExtension() {
+        observer.stopAllObserving();
+        DomHelper.clearDOM();
+        this.initMoreBeatmapInfo();
     }
 }
 

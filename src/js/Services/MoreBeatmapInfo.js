@@ -14,9 +14,6 @@ class MoreBeatmapInfo {
     initialize() {
         try {
             log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
-            this.domObserver.stopObservingPresence('.beatmapsets__items', '.beatmaps-popup__group');
-            this.domObserver.stopObserving('.beatmapsets__items');
-
             this.watchBeatmapsContainer();
 
             this.domObserver.watchElementPresence(
@@ -137,7 +134,7 @@ class MoreBeatmapInfo {
             BeatmapProcessor.setUpdateInfoBtnToBeatmapBlock(beatmapBlock, mapsetId, async () => {
                 await this.updateInfoInBeatmapBlock(beatmapBlock, mapsetId);
             });
-            return { '': beatmapBlock };
+            return {'': beatmapBlock};
         }
 
         const lastMapsetDiffId = this.getLastMapsetDiffInfo(mapsetData).id;
@@ -154,7 +151,7 @@ class MoreBeatmapInfo {
         });
 
         this.applyMapsetDataToBlocks(mapsetId, beatmapBlock, mapsetData);
-        return { [lastMapsetDiffId]: beatmapBlock };
+        return {[lastMapsetDiffId]: beatmapBlock};
     }
 
     async updateInfoInBeatmapBlock(beatmapBlock, mapsetId) {
@@ -309,20 +306,17 @@ class MoreBeatmapInfo {
 
     handleMissingBeatmapInfo(numericBeatmapId) {
         log('Beatmap info not found, reloading extension...', 'dev');
-        this.reloadExtensionEvent();
 
-        setTimeout(() => {
-            const retryBeatmapInfo = cache.getBeatmapInfoByIdFromMapsetsCache(numericBeatmapId);
-            if (retryBeatmapInfo) {
-                log(retryBeatmapInfo, 'debug');
-                const beatmapBlock = DomHelper.getMapsetBlockById(retryBeatmapInfo.mapsetId);
-                BeatmapProcessor.updateBeatmapInfo(beatmapBlock, retryBeatmapInfo.map);
-                DomHelper.updateBeatmapIdBtn(numericBeatmapId, retryBeatmapInfo.mapsetId);
-            } else {
-                log('Unable to fetch beatmap info after reload in 1.3 sec\nProbably bad internet connection',
-                    'dev', 'error');
-            }
-        }, 1300);
+        const retryBeatmapInfo = cache.getBeatmapInfoByIdFromMapsetsCache(numericBeatmapId);
+
+        if (retryBeatmapInfo) {
+            log(retryBeatmapInfo, 'debug');
+            const beatmapBlock = DomHelper.getMapsetBlockById(retryBeatmapInfo.mapsetId);
+            BeatmapProcessor.updateBeatmapInfo(beatmapBlock, retryBeatmapInfo.map);
+            DomHelper.updateBeatmapIdBtn(numericBeatmapId, retryBeatmapInfo.mapsetId);
+        } else {
+            this.reloadExtensionEvent();
+        }
     }
 
     reloadExtensionEvent() {

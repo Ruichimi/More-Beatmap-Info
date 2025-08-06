@@ -8,8 +8,7 @@ if (config.enable_devToolPanel) devTools();
 MBI.start();
 
 function reloadExtension() {
-    MBI = new ExtensionManager();
-    MBI.start();
+    MBI.reloadExtension();
 }
 
-window.addEventListener('reloadExtensionRequested', () => reloadExtension(true));
+window.addEventListener('reloadExtensionRequested', () => reloadExtension());
