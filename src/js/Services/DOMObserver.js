@@ -13,7 +13,7 @@ class DOMObserver {
             log(`DOMObserver: Target node not found for selector "${targetSelector}".`, 'dev', 'error');
             return;
         }
-        if (this.observers.has(targetSelector)) {
+        if (this.observers.has(targetSelector) && targetSelector !== this.defaultParentSelector) {
             log(`DOMObserver: Already observing "${targetSelector}".`, 'dev', 'error');
             return;
         }
@@ -21,7 +21,7 @@ class DOMObserver {
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.addedNodes.length > 0) {
-                    callback(mutation.addedNodes, targetSelector);
+                    callback(mutation.addedNodes);
                 }
             });
         });
@@ -38,29 +38,57 @@ class DOMObserver {
         }
     }
 
-    observeDynamicElement(classToCheck, callback, options = { childList: true, subtree: true }) {
-        this.startObserving(this.defaultParentSelector, (addedNodes) => {
-            addedNodes.forEach((node) => {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    const dynamicElement = node.querySelector(classToCheck);
-                    if (dynamicElement) {
-                        callback(dynamicElement);
-                    }
-                }
-            });
-        }, options);
+    watchElementPresence(selector, onAppear, onDisappear, parentSelector, config = { childList: true, subtree: true }) {
+        let currentElement = document.querySelector(selector);
+        let isPresent = !!currentElement;
+
+        if (isPresent) {
+            onAppear?.(currentElement);
+        }
+
+        const observer = new MutationObserver(() => {
+            const foundElement = document.querySelector(selector);
+            const existsNow = !!foundElement;
+
+            if (!isPresent && existsNow) {
+                isPresent = true;
+                currentElement = foundElement;
+                onAppear?.(foundElement);
+            } else if (isPresent && !existsNow) {
+                isPresent = false;
+                currentElement = null;
+                onDisappear?.();
+            }
+        });
+
+        observer.observe(document.body, config);
+        this.observers.set(`presence:${selector}`, observer);
+
+        log(`DOMObserver: Watching presence of "${selector}".`, 'dev');
+        return observer;
     }
 
-    stopObserving(targetSelector) {
-        const observer = this.observers.get(targetSelector);
+    stopObservingPresence(...selectors) {
+        const keys = selectors.map(selector => `presence:${selector}`);
+        this.stopObserving(...keys);
+    }
 
-        if (observer) {
-            observer.disconnect();
-            this.observers.delete(targetSelector);
-            log(`DOMObserver: Stopped observing "${targetSelector}".`, 'dev');
-        } else {
-            log(`DOMObserver: No observer found for "${targetSelector}".`, 'dev', 'warn');
-        }
+    isObserving(targetSelector) {
+        return this.observers.has(targetSelector);
+    }
+
+    stopObserving(...targetSelectors) {
+        targetSelectors.forEach(targetSelector => {
+            const observer = this.observers.get(targetSelector);
+
+            if (observer) {
+                observer.disconnect();
+                this.observers.delete(targetSelector);
+                log(`DOMObserver: Stopped observing "${targetSelector}".`, 'dev');
+            } else {
+                log(`DOMObserver: No observer found for "${targetSelector}".`, 'dev', 'warn');
+            }
+        });
     }
 
     stopAllObserving() {

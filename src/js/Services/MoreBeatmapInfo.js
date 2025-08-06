@@ -14,15 +14,14 @@ class MoreBeatmapInfo {
     initialize() {
         try {
             log('Attempting to call function setLastDiffInfoToMapsRows', 'dev');
-            this.domObserver.startObserving(
-                '.beatmapsets__items',
-                (addedNodes) => this.processBeatmapsBlocks(addedNodes),
-                {childList: true, subtree: false}
-            );
+            this.domObserver.stopObservingPresence('.beatmapsets__items', '.beatmaps-popup__group');
+            this.domObserver.stopObserving('.beatmapsets__items');
 
-            this.domObserver.observeDynamicElement(
+            this.watchBeatmapsContainer();
+
+            this.domObserver.watchElementPresence(
                 '.beatmaps-popup__group',
-                (dynamicElement) => this.processPopupGroupChanges(dynamicElement)
+                (appearedElement) => this.processPopupGroupChanges(appearedElement),
             );
         } catch (err) {
             log(err, 'dev', 'error');
@@ -30,8 +29,31 @@ class MoreBeatmapInfo {
         }
     }
 
-    processBeatmapsBlocks(beatmapsBlocksRows, single = false) {
-        const beatmapsChunks = BeatmapProcessor.getBeatmapsChunks(beatmapsBlocksRows, single);
+    watchBeatmapsContainer() {
+        let beatmapsContainerDisappeared = false;
+
+        this.domObserver.watchElementPresence(
+            '.beatmapsets__items',
+            () => {
+                if (beatmapsContainerDisappeared) {
+                    DomHelper.reloadBeatmapsContainer();
+                }
+
+                this.domObserver.startObserving(
+                    '.beatmapsets__items',
+                    (addedNodes) => this.processBeatmapsBlocks(addedNodes),
+                    {childList: true, subtree: false}
+                );
+            },
+            () => {
+                beatmapsContainerDisappeared = true;
+                this.domObserver.stopObserving('.beatmapsets__items')
+            }
+        );
+    }
+
+    processBeatmapsBlocks(blocks, single = false) {
+        const beatmapsChunks = BeatmapProcessor.getBeatmapsChunks(blocks, single);
         beatmapsChunks.forEach(async (chunk) => {
             const beatmapBlocks = BeatmapProcessor.prepareBeatmapBlocksForProcess(chunk);
             const beatmapBlocksLastDiffs = await this.setDataToBeatmapBlock(beatmapBlocks);
