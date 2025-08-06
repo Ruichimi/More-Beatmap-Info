@@ -158,11 +158,12 @@ class MoreBeatmapInfo {
     }
 
     async updateInfoInBeatmapBlock(beatmapBlock, mapsetId) {
+        const currentBeatmapIdInBlock = DomHelper.getCurrentBeatmapIdFromBlock(beatmapBlock);
         cache.removeAllBeatmapsFromCacheByIDOfItsMapset(mapsetId);
         cache.removeMapset(mapsetId);
         const updatedData = await OsuApi.updateMapsetDataOnServerAngGetIt(mapsetId);
-        const lastMapsetDiffData = this.getLastMapsetDiffInfo(updatedData);
-        BeatmapProcessor.setInfoToBeatmapBlock(beatmapBlock, lastMapsetDiffData);
+        const currentBeatmapData = this.getBeatmapInfoById(updatedData, currentBeatmapIdInBlock);
+        BeatmapProcessor.setInfoToBeatmapBlock(beatmapBlock, currentBeatmapData);
     }
 
     applyMapsetDataToBlocks(mapsetId, beatmapBlock, mapsetData) {
@@ -254,6 +255,17 @@ class MoreBeatmapInfo {
             return currentMap.difficulty_rating > maxDiff.difficulty_rating ? currentMap : maxDiff;
         }, mapsetData.beatmaps[0]);
     }
+
+    getBeatmapInfoById(mapsetData, targetId) {
+        const targetIdNum = Number(targetId);
+        if (isNaN(targetIdNum)) {
+            throw new Error(`target id ${targetIdNum} is invalid`);
+        }
+        if (!mapsetData || !Array.isArray(mapsetData.beatmaps)) return null;
+
+        return mapsetData.beatmaps.find(beatmap => Number(beatmap.id) === targetIdNum) || null;
+    }
+
 
     /**
      * Handles the click to change diff info for a given beatmapId, in beatmap card in DOM.

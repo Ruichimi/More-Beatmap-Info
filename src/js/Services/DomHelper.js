@@ -92,6 +92,10 @@ class DomHelper {
         return match ? match[1] : null;
     }
 
+    getCurrentBeatmapIdFromBlock(beatmapBlock) {
+        return beatmapBlock.getAttribute('beatmapid');
+    }
+
     addDeepInfoButtonToBeatmap(beatmapBlock, callbackClick) {
         const beatmapBlockRightMenu = beatmapBlock.querySelector('.beatmapset-panel__menu');
 
