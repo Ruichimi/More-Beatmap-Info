@@ -1,5 +1,5 @@
 export default {
-    app_ver: '1.0.1',
+    app_ver: '1.0.2',
 
     // Required legacy parameter
     client_id: '4378920f',
